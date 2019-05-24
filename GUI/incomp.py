@@ -7,6 +7,7 @@
 # WARNING! All changes made in this file will be lost!
 
 from PyQt5 import QtCore, QtGui, QtWidgets
+import patran_input
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -22,9 +23,11 @@ class Ui_MainWindow(object):
         self.materialWidget.setObjectName("materialWidget")
         self.tab_group_elem = QtWidgets.QWidget()
         self.tab_group_elem.setObjectName("tab_group_elem")
-        self.table_group_elem = QtWidgets.QTableView(self.tab_group_elem)
+        
+        self.table_group_elem = QtWidgets.QTableWidget(self.tab_group_elem)
         self.table_group_elem.setGeometry(QtCore.QRect(320, 10, 391, 371))
         self.table_group_elem.setObjectName("table_group_elem")
+        
         self.line_insert_group = QtWidgets.QLineEdit(self.tab_group_elem)
         self.line_insert_group.setGeometry(QtCore.QRect(10, 60, 281, 31))
         self.line_insert_group.setObjectName("line_insert_group")
@@ -43,18 +46,23 @@ class Ui_MainWindow(object):
         self.line_insert_elments = QtWidgets.QLineEdit(self.tab_group_elem)
         self.line_insert_elments.setGeometry(QtCore.QRect(10, 140, 281, 31))
         self.line_insert_elments.setObjectName("line_insert_elments")
+        
         self.add_group_elem = QtWidgets.QPushButton(self.tab_group_elem)
+        self.add_group_elem.clicked.connect(self.addGroup)
         self.add_group_elem.setGeometry(QtCore.QRect(20, 190, 75, 31))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.add_group_elem.setFont(font)
         self.add_group_elem.setObjectName("add_group_elem")
+        
         self.del_group_elem = QtWidgets.QPushButton(self.tab_group_elem)
+        self.del_group_elem.clicked.connect(self.delGroup)
         self.del_group_elem.setGeometry(QtCore.QRect(110, 190, 75, 31))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.del_group_elem.setFont(font)
         self.del_group_elem.setObjectName("del_group_elem")
+        
         self.materialWidget.addTab(self.tab_group_elem, "")
         self.tab_materials = QtWidgets.QWidget()
         self.tab_materials.setObjectName("tab_materials")
@@ -295,6 +303,21 @@ class Ui_MainWindow(object):
         MainWindow.setTabOrder(self.word_table_output, self.start_calculation)
         MainWindow.setTabOrder(self.start_calculation, self.output_log)
 
+
+    def addGroup(self):
+        string_elements=self.line_insert_elments.text()
+        string_group_name=self.line_insert_group.text()
+        result_list_elm = patran_input.process_input(string_elements)
+        numRows = self.table_group_elem.rowCount()
+        self.table_group_elem.setColumnCount(2)
+        self.table_group_elem.insertRow(numRows)
+        self.table_group_elem.setItem(numRows, 0, QtWidgets.QTableWidgetItem(string_group_name))
+        self.table_group_elem.setItem(numRows, 1, QtWidgets.QTableWidgetItem(str(result_list_elm)))
+
+    def delGroup(self):
+        self.table_group_elem.removeRow(self.table_group_elem.currentRow())
+
+        
     def browseBDF(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select BDF file", "", "BDF Files (*.bdf)")
         if fileName:
