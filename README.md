@@ -6,12 +6,18 @@ from NASTRAN calculation for composite elements. When doing structural analysis 
 
 When the program starts, it will read the .f06 file and output 2 .csv results file for all Strength Ratio and Ply Element Stresses that it has found in the input file. After that it can also postprocess the .csv files using the pandas module to obtain results. The user can specify certain elements that he wants results for, also calculate margins of saftey for ply strength ratio or ply shear stress. 
 
-Things to update:
-- Create function to read elements from Patran format to list in python
-- Create GUI
+Things to update globally:
+- ~Create function to read elements from Patran format to list in python~
+- ~Create GUI~ 
 - Accept text from user with elements structured on groups
 - Calculate MoS for Strength Ratio and Element Stress in program
 - Output values in excel and minimum MOS global in GUI window
 - Output values in word tables 
 
-This software is in development.
+In Work:
+- Add elements and groups in table view and also save them in variables for future uses
+	- group and elements
+	- material input
+- Update check boxes for processing True/False
+
+
