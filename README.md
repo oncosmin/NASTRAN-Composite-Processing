@@ -20,5 +20,7 @@ In Work:
 	- ~material facing~
 	- material core
 - Update check boxes for processing True/False
+- Add headers to the view tables 
+- Add SQLITE database for better performance and to store all data
 
 
