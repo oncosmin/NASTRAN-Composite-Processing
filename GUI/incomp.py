@@ -11,6 +11,9 @@ import patran_input
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
+        '''
+        Main Window details
+        '''
         MainWindow.setObjectName("MainWindow")
         MainWindow.resize(818, 688)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
@@ -21,13 +24,15 @@ class Ui_MainWindow(object):
         self.materialWidget = QtWidgets.QTabWidget(self.widget)
         self.materialWidget.setGeometry(QtCore.QRect(20, 160, 731, 411))
         self.materialWidget.setObjectName("materialWidget")
+        '''
+        Table of Elements grouping
+        '''
         self.tab_group_elem = QtWidgets.QWidget()
         self.tab_group_elem.setObjectName("tab_group_elem")
-        
         self.table_group_elem = QtWidgets.QTableWidget(self.tab_group_elem)
         self.table_group_elem.setGeometry(QtCore.QRect(320, 10, 391, 371))
+        self.table_group_elem.setHorizontalHeaderLabels(['Group Name', 'Group Elements'])
         self.table_group_elem.setObjectName("table_group_elem")
-        
         self.line_insert_group = QtWidgets.QLineEdit(self.tab_group_elem)
         self.line_insert_group.setGeometry(QtCore.QRect(10, 60, 281, 31))
         self.line_insert_group.setObjectName("line_insert_group")
@@ -38,7 +43,7 @@ class Ui_MainWindow(object):
         self.label_groups.setFont(font)
         self.label_groups.setObjectName("label_groups")
         self.label_elements = QtWidgets.QLabel(self.tab_group_elem)
-        self.label_elements.setGeometry(QtCore.QRect(10, 110, 121, 21))
+        self.label_elements.setGeometry(QtCore.QRect(10, 110, 161, 21))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.label_elements.setFont(font)
@@ -46,7 +51,7 @@ class Ui_MainWindow(object):
         self.line_insert_elments = QtWidgets.QLineEdit(self.tab_group_elem)
         self.line_insert_elments.setGeometry(QtCore.QRect(10, 140, 281, 31))
         self.line_insert_elments.setObjectName("line_insert_elments")
-        
+        #Push button to add group element with name and elements
         self.add_group_elem = QtWidgets.QPushButton(self.tab_group_elem)
         self.add_group_elem.clicked.connect(self.addGroup)
         self.add_group_elem.setGeometry(QtCore.QRect(20, 190, 75, 31))
@@ -54,7 +59,7 @@ class Ui_MainWindow(object):
         font.setPointSize(11)
         self.add_group_elem.setFont(font)
         self.add_group_elem.setObjectName("add_group_elem")
-        
+        #Push button to delete groups and elements
         self.del_group_elem = QtWidgets.QPushButton(self.tab_group_elem)
         self.del_group_elem.clicked.connect(self.delGroup)
         self.del_group_elem.setGeometry(QtCore.QRect(110, 190, 75, 31))
@@ -62,34 +67,43 @@ class Ui_MainWindow(object):
         font.setPointSize(11)
         self.del_group_elem.setFont(font)
         self.del_group_elem.setObjectName("del_group_elem")
-        
+        '''
+        Material Tab
+        '''
         self.materialWidget.addTab(self.tab_group_elem, "")
         self.tab_materials = QtWidgets.QWidget()
         self.tab_materials.setObjectName("tab_materials")
+        #Label Mat Facing
         self.label_matFacing = QtWidgets.QLabel(self.tab_materials)
-        self.label_matFacing.setGeometry(QtCore.QRect(20, 10, 131, 21))
+        self.label_matFacing.setGeometry(QtCore.QRect(20, 10, 161, 21))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.label_matFacing.setFont(font)
         self.label_matFacing.setObjectName("label_matFacing")
+        #Label Mat Core
         self.label_matCore_2 = QtWidgets.QLabel(self.tab_materials)
-        self.label_matCore_2.setGeometry(QtCore.QRect(20, 120, 101, 21))
+        self.label_matCore_2.setGeometry(QtCore.QRect(20, 120, 141, 21))
         font = QtGui.QFont()
         font.setPointSize(11)
         self.label_matCore_2.setFont(font)
         self.label_matCore_2.setObjectName("label_matCore_2")
-        self.tableView_facing = QtWidgets.QTableView(self.tab_materials)
+        ##Table View Materials facing
+        self.tableView_facing = QtWidgets.QTableWidget(self.tab_materials)
         self.tableView_facing.setGeometry(QtCore.QRect(380, 40, 321, 81))
         self.tableView_facing.setObjectName("tableView_facing")
-        self.tableView_core = QtWidgets.QTableView(self.tab_materials)
+        ##Table View Materials Core 
+        self.tableView_core = QtWidgets.QTableWidget(self.tab_materials)
         self.tableView_core.setGeometry(QtCore.QRect(300, 150, 401, 181))
         self.tableView_core.setObjectName("tableView_core")
+        #Text insert for material facing Name
         self.line_insert_mat_facing = QtWidgets.QLineEdit(self.tab_materials)
         self.line_insert_mat_facing.setGeometry(QtCore.QRect(170, 40, 111, 31))
         self.line_insert_mat_facing.setObjectName("line_insert_mat_facing")
+        #Text insert for material facing FOSU
         self.line_insert_facing_fosu = QtWidgets.QLineEdit(self.tab_materials)
         self.line_insert_facing_fosu.setGeometry(QtCore.QRect(170, 80, 111, 31))
         self.line_insert_facing_fosu.setObjectName("line_insert_facing_fosu")
+
         self.label_matFacing_2 = QtWidgets.QLabel(self.tab_materials)
         self.label_matFacing_2.setGeometry(QtCore.QRect(20, 40, 131, 31))
         font = QtGui.QFont()
@@ -97,17 +111,23 @@ class Ui_MainWindow(object):
         self.label_matFacing_2.setFont(font)
         self.label_matFacing_2.setObjectName("label_matFacing_2")
         self.label_facing_FOSu = QtWidgets.QLabel(self.tab_materials)
-        self.label_facing_FOSu.setGeometry(QtCore.QRect(120, 80, 31, 31))
+        self.label_facing_FOSu.setGeometry(QtCore.QRect(110, 80, 41, 31))
         font = QtGui.QFont()
         font.setPointSize(9)
         self.label_facing_FOSu.setFont(font)
         self.label_facing_FOSu.setObjectName("label_facing_FOSu")
+        ###Push Button to add mat Facing and FOSU
         self.pushButton_add_facing = QtWidgets.QPushButton(self.tab_materials)
         self.pushButton_add_facing.setGeometry(QtCore.QRect(300, 80, 61, 31))
         self.pushButton_add_facing.setObjectName("pushButton_add_facing")
+        self.pushButton_add_facing.clicked.connect(self.addMatFacing)
+
+        ### Push button to del mat Facing and FOSU
         self.pushButton_delete_facing = QtWidgets.QPushButton(self.tab_materials)
         self.pushButton_delete_facing.setGeometry(QtCore.QRect(300, 40, 61, 31))
         self.pushButton_delete_facing.setObjectName("pushButton_delete_facing")
+        self.pushButton_delete_facing.clicked.connect(self.delFacing)
+        
         self.label_matCore = QtWidgets.QLabel(self.tab_materials)
         self.label_matCore.setGeometry(QtCore.QRect(20, 150, 131, 31))
         font = QtGui.QFont()
@@ -307,12 +327,26 @@ class Ui_MainWindow(object):
     def addGroup(self):
         string_elements=self.line_insert_elments.text()
         string_group_name=self.line_insert_group.text()
+        #Process data with Patran_input.py
         result_list_elm = patran_input.process_input(string_elements)
         numRows = self.table_group_elem.rowCount()
         self.table_group_elem.setColumnCount(2)
         self.table_group_elem.insertRow(numRows)
         self.table_group_elem.setItem(numRows, 0, QtWidgets.QTableWidgetItem(string_group_name))
         self.table_group_elem.setItem(numRows, 1, QtWidgets.QTableWidgetItem(str(result_list_elm)))
+
+    def addMatFacing(self):
+        #Check if input is float
+        string_mat_facing = self.line_insert_mat_facing.text()
+        string_facing_fosu=self.line_insert_facing_fosu.text()
+        numRows = self.tableView_facing.rowCount()
+        self.tableView_facing.setColumnCount(2)
+        self.tableView_facing.insertRow(numRows)
+        self.tableView_facing.setItem(numRows, 0, QtWidgets.QTableWidgetItem(string_mat_facing))
+        self.tableView_facing.setItem(numRows, 1, QtWidgets.QTableWidgetItem(string_facing_fosu))
+        
+    def delFacing(self):
+        self.tableView_facing.removeRow(self.tableView_facing.currentRow())
 
     def delGroup(self):
         self.table_group_elem.removeRow(self.table_group_elem.currentRow())
