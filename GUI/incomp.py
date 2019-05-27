@@ -178,12 +178,17 @@ class Ui_MainWindow(object):
         self.label_KDF.setFont(font)
         self.label_KDF.setAlignment(QtCore.Qt.AlignRight|QtCore.Qt.AlignTrailing|QtCore.Qt.AlignVCenter)
         self.label_KDF.setObjectName("label_KDF")
+        #Push button to add core
         self.pushButton_add_core = QtWidgets.QPushButton(self.tab_materials)
         self.pushButton_add_core.setGeometry(QtCore.QRect(300, 340, 61, 31))
         self.pushButton_add_core.setObjectName("pushButton_add_core")
+        self.pushButton_add_core.clicked.connect(self.addMatCore)
+        #Push button to delete core
         self.pushButton_delete_core = QtWidgets.QPushButton(self.tab_materials)
         self.pushButton_delete_core.setGeometry(QtCore.QRect(370, 340, 61, 31))
         self.pushButton_delete_core.setObjectName("pushButton_delete_core")
+        self.pushButton_delete_core.clicked.connect(self.delCore)
+        
         self.line = QtWidgets.QFrame(self.tab_materials)
         self.line.setGeometry(QtCore.QRect(20, 130, 681, 20))
         self.line.setFrameShape(QtWidgets.QFrame.HLine)
@@ -344,7 +349,26 @@ class Ui_MainWindow(object):
         self.tableView_facing.insertRow(numRows)
         self.tableView_facing.setItem(numRows, 0, QtWidgets.QTableWidgetItem(string_mat_facing))
         self.tableView_facing.setItem(numRows, 1, QtWidgets.QTableWidgetItem(string_facing_fosu))
+
+    def addMatCore(self):
+        string_mat_core = self.line_insert_core_id.text()
+        string_core_fsl = self.line_insert_fsl.text()
+        string_core_fsw = self.line_insert_fsw.text()
+        string_core_fosu = self.line_insert_core_fosu.text()
+        string_core_kdf = self.line_insert_kdf.text()
+        numRows = self.tableView_core.rowCount()
+        self.tableView_core.setColumnCount(4)
+        self.tableView_core.insertRow(numRows)
+        self.tableView_core.setItem(numRows, 0, QtWidgets.QTableWidgetItem(string_mat_core))
+        self.tableView_core.setItem(numRows, 1, QtWidgets.QTableWidgetItem(string_core_fsl))
+        self.tableView_core.setItem(numRows, 2, QtWidgets.QTableWidgetItem(string_core_fsw))
+        self.tableView_core.setItem(numRows, 3, QtWidgets.QTableWidgetItem(string_core_fosu))
+        self.tableView_core.setItem(numRows, 4, QtWidgets.QTableWidgetItem(string_core_kdf))
+
         
+    def delCore(self):
+        self.tableView_core.removeRow(self.tableView_core.currentRow())
+
     def delFacing(self):
         self.tableView_facing.removeRow(self.tableView_facing.currentRow())
 
