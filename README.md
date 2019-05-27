@@ -16,8 +16,9 @@ Things to update globally:
 
 In Work:
 - Add elements and groups in table view and also save them in variables for future uses
-	- group and elements
-	- material input
+	- ~group and elements~
+	- ~material facing~
+	- material core
 - Update check boxes for processing True/False
 
 
