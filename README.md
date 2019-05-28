@@ -18,9 +18,10 @@ In Work:
 - Add elements and groups in table view and also save them in variables for future uses
 	- ~group and elements~
 	- ~material facing~
-	- material core
+	- ~material core~
+	- resize column width to view the whole table
 - Update check boxes for processing True/False
-- Add headers to the view tables 
+- ~Add headers to the view tables ~
 - Add SQLITE database for better performance and to store all data
 
 
