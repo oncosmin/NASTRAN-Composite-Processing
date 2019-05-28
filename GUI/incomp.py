@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
+'''
+TITLE: Nastran Composite Processing Tool (NASCOMP)
 
-# Form implementation generated from reading ui file 'I:\Python 3.6\PYTHON3 Work\NASTRAN-Composite-Processing\GUI\incomp_gui.ui'
-#
-# Created by: PyQt5 UI code generator 5.11.3
-#
-# WARNING! All changes made in this file will be lost!
+Description:
+Implementation of a processing script for NASTRAN composite output with simple GUI.
+It contains data manipulation for Lamina Stress/Strain and Ply Strength Ratio
+'''
+
 
 from PyQt5 import QtCore, QtGui, QtWidgets
 import patran_input
+import sqlite3
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -87,14 +90,16 @@ class Ui_MainWindow(object):
         font.setPointSize(11)
         self.label_matCore_2.setFont(font)
         self.label_matCore_2.setObjectName("label_matCore_2")
-        ##Table View Materials facing
+        ##Table Widget Materials facing
         self.tableView_facing = QtWidgets.QTableWidget(self.tab_materials)
         self.tableView_facing.setGeometry(QtCore.QRect(380, 40, 321, 81))
         self.tableView_facing.setObjectName("tableView_facing")
-        ##Table View Materials Core 
+
+        ##Table Widget Materials Core
         self.tableView_core = QtWidgets.QTableWidget(self.tab_materials)
         self.tableView_core.setGeometry(QtCore.QRect(300, 150, 401, 181))
         self.tableView_core.setObjectName("tableView_core")
+
         #Text insert for material facing Name
         self.line_insert_mat_facing = QtWidgets.QLineEdit(self.tab_materials)
         self.line_insert_mat_facing.setGeometry(QtCore.QRect(170, 40, 111, 31))
@@ -334,6 +339,7 @@ class Ui_MainWindow(object):
         string_group_name=self.line_insert_group.text()
         #Process data with Patran_input.py
         result_list_elm = patran_input.process_input(string_elements)
+        self.table_group_elem.setHorizontalHeaderLabels(['Group Name','Elements'])
         numRows = self.table_group_elem.rowCount()
         self.table_group_elem.setColumnCount(2)
         self.table_group_elem.insertRow(numRows)
@@ -345,6 +351,7 @@ class Ui_MainWindow(object):
         string_mat_facing = self.line_insert_mat_facing.text()
         string_facing_fosu=self.line_insert_facing_fosu.text()
         numRows = self.tableView_facing.rowCount()
+        self.tableView_facing.setHorizontalHeaderLabels(['Material','FOSU'])
         self.tableView_facing.setColumnCount(2)
         self.tableView_facing.insertRow(numRows)
         self.tableView_facing.setItem(numRows, 0, QtWidgets.QTableWidgetItem(string_mat_facing))
@@ -356,6 +363,7 @@ class Ui_MainWindow(object):
         string_core_fsw = self.line_insert_fsw.text()
         string_core_fosu = self.line_insert_core_fosu.text()
         string_core_kdf = self.line_insert_kdf.text()
+        self.tableView_core.setHorizontalHeaderLabels(['Material','FsL','FsW','FOSU','KDF'])
         numRows = self.tableView_core.rowCount()
         self.tableView_core.setColumnCount(4)
         self.tableView_core.insertRow(numRows)
