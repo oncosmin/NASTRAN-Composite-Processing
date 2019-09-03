@@ -12,6 +12,7 @@ def read_input(patran_input):
     alist=patran_input.split(' ')[1:]
     return(alist)
 
+
 def process_input(gui_list):
     first_list=read_input(gui_list)
     last_list=[]
