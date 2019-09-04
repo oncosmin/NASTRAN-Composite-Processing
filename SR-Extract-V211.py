@@ -11,9 +11,9 @@ from math import sqrt
 # Creare fisier excel pentru scrierea rezultatelor
 workbook = Workbook('ResultsSR.xlsx')
 worksheet = workbook.add_worksheet('Data_Results_SR')
-worksheet2 = workbook.add_worksheet('Calculation_SR')
+worksheet2 = workbook.add_worksheet('Summary_SR')
 worksheet3 = workbook.add_worksheet('Data_Results_Stress')
-worksheet4 = workbook.add_worksheet('Calculation_Stress')
+worksheet4 = workbook.add_worksheet('Summary_Stress')
 
 # Creare baza de date pentru stocarea datelor 
 conn=sqlite3.connect('ResultsData.db')
@@ -27,8 +27,18 @@ def nrCazuri():
     nrCaz=c.fetchone()
     return nrCaz
 
-def read_sr(group_name,column,index):
+def create_table_sr(group_name,fosuSR,index):
+    '''
+    Function to create table with min(SR) values for specific groups and all cases
+    Input: Group Name - from GroupOutput.txt as STR
+           FOSu SR - factor of saftey inputed by user for MOS calculation as FLOAT
+           Index - subcase number as INTEGER
+    Output: Table ElmSR_MOS in ResultsData.db
+    '''
 
+    #Creat table pentru stocat informatiile min(SR)
+    c.execute('CREATE TABLE IF NOT EXISTS ElmSR_MOS (eid INTEGER, pid INTEGER, SR_min REAL, Subcase INTEGER, MOS REAL)')
+    
     statement='SELECT eid,pid,min(sr),subcase\
                FROM ElmStrengthRatio\
                WHERE eid IN (SELECT eid FROM '+group_name+' )\
@@ -37,26 +47,44 @@ def read_sr(group_name,column,index):
     #selecteaza randul cu min(SR) pentru grupul de elemente  
     c.execute(statement,(index,))
     data=c.fetchall()
+    for values in data:
+        print(values)
+        if values[2]==None:
+            break
+        else:            
+            statement2='INSERT OR REPLACE INTO ElmSR_MOS VALUES(?,?,?,?,?)'
+            c.execute(statement2,values+(values[2]/fosuSR-1,))
+            conn.commit()
     
     #scrie in worksheetul de resultate, toate datele
-    worksheet.write(0,column,group_name)
-    for row in data:
-        for j, value in enumerate(row):
-            if value==None:
-                worksheet.write(index, j+column, 'None')
-            else:
-                worksheet.write(index, j+column, value)
+##    worksheet.write(0,column,group_name)
+##    for row in data:
+##        for j, value in enumerate(row):
+##            if value==None:
+##                worksheet.write(index, j+column, 'None')
+##            else:
+##                worksheet.write(index, j+column, value)
 
     
-def process_sr(group_name,rows,fosuSR):
-
-    statement='SELECT eid,pid,min(sr),subcase\
-               FROM ElmStrengthRatio\
-               WHERE eid IN (SELECT eid FROM '+group_name+' )\
-               AND eid NOT IN (SELECT eid FROM ElementeEliminate)'
+def write_sr(group_name,rows,column,index_case):
+    '''
+    Function to write from database table ElmSR_MOS to Excel File
+    Input: group_name - Group Name from GroupOutput.txt as STRING
+           rows - row index to print summary results, max value equal to max number of groups
+           column - column index for positioning when writing results for all cases (+6 increment)
+           index_case - index of the case analyzed, used only for printing results based on nr of cases
+    Output: Excel file with 2 worksheets, Data_Results_SR for all min(SR) and MOS based on number of
+            subcases and groups. Summary_SR represents a summary of the min(SR) and coresponding MOS
+            for each group of elements, disregarding the subcase number
+    '''
+    
+    statement='SELECT eid,pid,SR_min,Subcase,MOS\
+               FROM ElmSR_MOS\
+               WHERE eid IN (SELECT eid FROM '+group_name+')\
+               AND Subcase = ?'
     
     #selecteaza randul cu min(SR) pentru grupul de elemente
-    c.execute(statement)
+    c.execute(statement,(index_case,))
     data=c.fetchall()
 
     #scrie Headerul pentru tabelul de rezultate calculate
@@ -131,7 +159,7 @@ def create_hc_mos(case,fos_hc):
     dataHC = c.fetchall()
     statement2='INSERT OR REPLACE INTO HC_mos VALUES(?,?,?,?,?,?,?,?)'
     for line in dataHC:
-        c.execute(statement2,line+((1/(float(fos_hc)*sqrt((line[2]/line[4])**2+(line[3]/line[5])**2)))-1,))
+        c.execute(statement2,line+((1/(fos_hc*sqrt((line[2]/line[4])**2+(line[3]/line[5])**2)))-1,))
         conn.commit()
         
 
@@ -227,10 +255,10 @@ def main():
         pass
 
 
-    '''
+    '''---------------------------------------------------------------------
     Create tables with group names and specific EID, based on GroupOuput.txt
     - if tables exist, they will be deleted and written again
-    '''
+    ----------------------------------------------------------------------'''
     groupNames=read_groups()
     print("--- %s seconds to create tables from group names ---" % (time.time() - start_time))
 
@@ -240,41 +268,44 @@ def main():
     print ('Number of cases',nr_cazuri[0])
 
 
-    '''
+    '''-----------------------------------------------------------------------------------------
     Create Table based on HC properties with plyID, FsL, FsW and eid for every pcomp elem with HC
-    '''
+    ------------------------------------------------------------------------------------------'''
     read_hc_props()
     print("--- %s seconds to create tables with HC properties ---" % (time.time() - start_time))
 
 
-    '''
-    Process SR data and write to excel the results
-    
-    '''
-    condition = input('Do you want to process SR data and write the results to the excel file ? 1-Yes, 2-No: ')
+    '''----------------------------------------------------
+    Process SR data and create table with results plus MOS
+    -----------------------------------------------------'''
+    condition = input('Do you want to process SR data and calculate MOS? 1-Yes, 2-No: ')
 
     if condition == '1':
         fosu_sr = input('Insert FOS for SR facing MOS calculation = ')
         col=0
         rows=1
+        #Create table of results for min(SR) and MOS based on groups and subcases
+        c.execute('DROP TABLE IF EXISTS ElmSR_MOS')
         for group in groupNames:
             for i in range(nr_cazuri[0]):
-                read_sr(group,col,i+1)
-            process_sr(group,rows,fosu_sr)
+                create_table_sr(group,float(fosu_sr),i+1)
+
+        # Write results from ElmSR_MOS table in db to excel
+        for grp in groupNames:
+            for j in range(nr_cazuri[0]):
+                write_sr(grp,rows,col,j+1)
             col+=5
             rows+=1
-        workbook.close()
+        #workbook.close()
         print("--- %s seconds to read and process SR data ---" % (time.time() - start_time))
     elif condition == '2':
-        print('NO SR ouput written to excel results file!')
+        print('NO SR file read and processed!')
 
 
-
-    '''
-    Process Stress data for HC MOS calculation and write to excel the results
-    
-    '''
-    condition2 = input('Do you want to process Stress data for HC MOS calculation and ouput results to excel ? 1-Yes, 2-No: ')
+    '''----------------------------------------------------------------------
+    Process Stress data for HC MOS calculation 
+    -------------------------------------------------------------------------'''
+    condition2 = input('Do you want to process Stress data for HC MOS calculation  ? 1-Yes, 2-No: ')
     
     if condition2 == '1':
         rows2=1
@@ -283,7 +314,7 @@ def main():
         c.execute('DROP TABLE IF EXISTS HC_mos') 
         for i in range(nr_cazuri[0]):
             # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
-            create_hc_mos(i+1,fosu_hc)
+            create_hc_mos(i+1,float(fosu_hc))
         print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time))
 
         for group in groupNames:
@@ -294,12 +325,24 @@ def main():
             rows2+=1
         workbook.close()    
         print("--- %s seconds to write HC MOS results to Excel file ---" % (time.time() - start_time))  
-    elif condition == '2':
-        print('NO HC ouput written to excel results file!')
+    elif condition2 == '2':
+        print('NO HC values processed!')
 
 
+    '''----------------------------------------------------------------------
+    Write SR and Stress data results to excel 
+    -------------------------------------------------------------------------'''  
+    condition3 = input('Do you want to write SR and HC MOS data to excel? 1-Yes, 2-No: ')
+    if condition3 == '1':
+        rows_sr=1
+        col_sr=0
+        rows_stress=1
+        col_stress=0
+        
 
-
+        
+    elif condition3 == '2':
+        print('NO HC values processed!')
 
 
     
