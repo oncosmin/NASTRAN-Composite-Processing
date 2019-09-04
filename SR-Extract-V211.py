@@ -71,8 +71,9 @@ def write_sr(group_name,rows,column,index_case):
     Function to write from database table ElmSR_MOS to Excel File
     Input: group_name - Group Name from GroupOutput.txt as STRING
            rows - row index to print summary results, max value equal to max number of groups
-           column - column index for positioning when writing results for all cases (+6 increment)
+           column - column index for positioning when writing results for all cases (+5 increment)
            index_case - index of the case analyzed, used only for printing results based on nr of cases
+                        starts from 1, INTEGER
     Output: Excel file with 2 worksheets, Data_Results_SR for all min(SR) and MOS based on number of
             subcases and groups. Summary_SR represents a summary of the min(SR) and coresponding MOS
             for each group of elements, disregarding the subcase number
@@ -87,23 +88,42 @@ def write_sr(group_name,rows,column,index_case):
     c.execute(statement,(index_case,))
     data=c.fetchall()
 
-    #scrie Headerul pentru tabelul de rezultate calculate
-    header=['Group Name','EID','PID','MOS SR','Subcase']
+    #scrie nume grup pe prima linie de excel, row=0
+    worksheet.write(0,column,group_name)
+    # scriere header pe a doua linie, row=1, plus increment la coloana
+    header=['EID','PID','SR','Subcase','MOS SR']
     for n,m in enumerate(header):
-        worksheet2.write(0,n,m)
+        worksheet.write(1,n+column,m)
 
     #scrie in worksheetul de calcule SR, valorile minime pentru SR pe group   
-    worksheet2.write(rows,0,group_name)
     for i in data:
         for col,val in enumerate(i):
             if val==None:
-                pass
+                continue
             else:
-                if col==2:
-                    worksheet2.write(rows, col+1, val/float(fosuSR)-1)
-                else:
-                    worksheet2.write(rows, col+1, val)
+                worksheet.write(index_case+1, col+column, val)
 
+    # Selectare elemente pentru scrierea summary
+    statement2='SELECT eid,pid,min(SR_min),Subcase,MOS\
+               FROM ElmSR_MOS\
+               WHERE eid IN (SELECT eid FROM '+group_name+')'
+    
+    #selecteaza elem cu min(SR) pentru grupul de elemente pentru printare summary
+    c.execute(statement2)
+    data2=c.fetchall()
+
+    #scriere header pentru summary
+    header=['Group Name','EID','PID','SR','Subcase','MOS SR']
+    for n,m in enumerate(header):
+        worksheet2.write(0,n,m)
+
+    worksheet2.write(rows,0,group_name)
+    for j in data2:
+        for col2,val2 in enumerate(j):
+            if val2==None:
+                continue
+            else:
+                worksheet2.write(rows, col2+1, val2)    
 
 
 
@@ -121,7 +141,8 @@ def read_groups():
             statement='INSERT OR REPLACE INTO '+linie[0]+' VALUES(?)'
             c.execute(statement,(i,))
             conn.commit()
-    return listaGrupuri
+    #return listaGrupuri[:-1] because we don't want to retrieve ElementeEliminate as a group name
+    return listaGrupuri[:-1]
 
 
 # Function to create table with HC properties 
@@ -174,14 +195,20 @@ def write_all_hc_mos(nume_group,coloana,index):
     c.execute(statement3,(index,))
     data=c.fetchall()
 
-    #scrie in worksheetul de resultate, toate datele de min MOS pentru fiecare caz corespunzator grupului
+    #scrie header pentru rezultate
     worksheet3.write(0,coloana,nume_group)
+    header=['EID','PID','Shear XZ','Shear YZ','FsL','FsW','Subcase','MOS HC']
+    for n,m in enumerate(header):
+        worksheet3.write(1,n+coloana,m)
+
+    #scrie in worksheetul de resultate, toate datele de min MOS pentru fiecare caz corespunzator grupului  
     for row in data:
         for j, value in enumerate(row):
             if value==None:
-                worksheet3.write(index, j+coloana, 'None')
+                continue
+                #worksheet3.write(index, j+coloana, 'None')
             else:
-                worksheet3.write(index, j+coloana, value)
+                worksheet3.write(index+1, j+coloana, value)
 
 # Functie pentru scrierea valorilor minime ale MOS pentru HC pentru fiecare Group de elem
 def write_min_hc_mos(nume_group,rows):
@@ -204,7 +231,7 @@ def write_min_hc_mos(nume_group,rows):
     for i in data:
         for col,val in enumerate(i):
             if val==None:
-                pass
+                continue
             else:
                 worksheet4.write(rows, col+1, val)
                     
@@ -289,14 +316,6 @@ def main():
         for group in groupNames:
             for i in range(nr_cazuri[0]):
                 create_table_sr(group,float(fosu_sr),i+1)
-
-        # Write results from ElmSR_MOS table in db to excel
-        for grp in groupNames:
-            for j in range(nr_cazuri[0]):
-                write_sr(grp,rows,col,j+1)
-            col+=5
-            rows+=1
-        #workbook.close()
         print("--- %s seconds to read and process SR data ---" % (time.time() - start_time))
     elif condition == '2':
         print('NO SR file read and processed!')
@@ -315,16 +334,7 @@ def main():
         for i in range(nr_cazuri[0]):
             # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
             create_hc_mos(i+1,float(fosu_hc))
-        print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time))
-
-        for group in groupNames:
-            for j in range(nr_cazuri[0]):
-                write_all_hc_mos(group,col2,j+1)
-            write_min_hc_mos(group,rows2)
-            col2+=9
-            rows2+=1
-        workbook.close()    
-        print("--- %s seconds to write HC MOS results to Excel file ---" % (time.time() - start_time))  
+        print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time)) 
     elif condition2 == '2':
         print('NO HC values processed!')
 
@@ -334,15 +344,22 @@ def main():
     -------------------------------------------------------------------------'''  
     condition3 = input('Do you want to write SR and HC MOS data to excel? 1-Yes, 2-No: ')
     if condition3 == '1':
-        rows_sr=1
+        rows=1
         col_sr=0
-        rows_stress=1
         col_stress=0
-        
-
-        
+        # Write results from ElmSR_MOS table in db to excel
+        for group in groupNames:
+            for i in range(nr_cazuri[0]):
+                write_sr(group,rows,col_sr,i+1)
+                write_all_hc_mos(group,col_stress,i+1)
+            write_min_hc_mos(group,rows)
+            col_sr+=6
+            col_stress+=9
+            rows+=1        
+        workbook.close()
+        print("--- %s seconds to write excel file with SR and HC MOS results ---" % (time.time() - start_time))
     elif condition3 == '2':
-        print('NO HC values processed!')
+        print('NO excel file printed!')
 
 
     
