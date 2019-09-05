@@ -1,7 +1,7 @@
-import csv
 import sqlite3
 from sr_extract_stress import stress_to_database
 from sr_extract_sr import sr_to_database
+from sr_extract_vm import vm_stress_to_database
 from cleanf06 import clean_f06
 from patran_input import process_input
 import time
@@ -11,9 +11,9 @@ from math import sqrt
 # Creare fisier excel pentru scrierea rezultatelor
 workbook = Workbook('ResultsSR.xlsx')
 worksheet = workbook.add_worksheet('Data_Results_SR')
-worksheet2 = workbook.add_worksheet('Summary_SR')
-worksheet3 = workbook.add_worksheet('Data_Results_Stress')
-worksheet4 = workbook.add_worksheet('Summary_Stress')
+worksheet2 = workbook.add_worksheet('Summary_SR_MOS')
+worksheet3 = workbook.add_worksheet('Data_Results_HC')
+worksheet4 = workbook.add_worksheet('Summary_HC_MOS')
 
 # Creare baza de date pentru stocarea datelor 
 conn=sqlite3.connect('ResultsData.db')
@@ -30,10 +30,10 @@ def nrCazuri():
 def create_table_sr(group_name,fosuSR,index):
     '''
     Function to create table with min(SR) values for specific groups and all cases
-    Input: Group Name - from GroupOutput.txt as STR
+    INPUT: Group Name - from GroupOutput.txt as STR
            FOSu SR - factor of saftey inputed by user for MOS calculation as FLOAT
            Index - subcase number as INTEGER
-    Output: Table ElmSR_MOS in ResultsData.db
+    OUTPUT: Table ElmSR_MOS in ResultsData.db
     '''
 
     #Creat table pentru stocat informatiile min(SR)
@@ -48,33 +48,22 @@ def create_table_sr(group_name,fosuSR,index):
     c.execute(statement,(index,))
     data=c.fetchall()
     for values in data:
-        print(values)
         if values[2]==None:
             break
         else:            
             statement2='INSERT OR REPLACE INTO ElmSR_MOS VALUES(?,?,?,?,?)'
             c.execute(statement2,values+(values[2]/fosuSR-1,))
             conn.commit()
-    
-    #scrie in worksheetul de resultate, toate datele
-##    worksheet.write(0,column,group_name)
-##    for row in data:
-##        for j, value in enumerate(row):
-##            if value==None:
-##                worksheet.write(index, j+column, 'None')
-##            else:
-##                worksheet.write(index, j+column, value)
 
-    
 def write_sr(group_name,rows,column,index_case):
     '''
     Function to write from database table ElmSR_MOS to Excel File
-    Input: group_name - Group Name from GroupOutput.txt as STRING
+    INPUT: group_name - Group Name from GroupOutput.txt as STRING
            rows - row index to print summary results, max value equal to max number of groups
            column - column index for positioning when writing results for all cases (+5 increment)
            index_case - index of the case analyzed, used only for printing results based on nr of cases
                         starts from 1, INTEGER
-    Output: Excel file with 2 worksheets, Data_Results_SR for all min(SR) and MOS based on number of
+    OUTPUT: Excel file with 2 worksheets, Data_Results_SR for all min(SR) and MOS based on number of
             subcases and groups. Summary_SR represents a summary of the min(SR) and coresponding MOS
             for each group of elements, disregarding the subcase number
     '''
@@ -125,8 +114,6 @@ def write_sr(group_name,rows,column,index_case):
             else:
                 worksheet2.write(rows, col2+1, val2)    
 
-
-
 # Funtion to create Tables in database from GroupOutput.txt
 def read_groups():
     file=open('GroupOutput.txt','r')
@@ -145,8 +132,35 @@ def read_groups():
     return listaGrupuri[:-1]
 
 
+# Funtion to create Tables in database from GroupMetalic.txt
+def read_groups_metalic():
+    file=open('GroupMetalic.txt','r')
+    listaGrupuri=[]
+    for line in file:
+        linie=line.split(',')
+        listaGrupuri.append(linie[0])
+        c.execute('DROP TABLE IF EXISTS {} '.format(linie[0]))
+        c.execute('CREATE TABLE IF NOT EXISTS {} (eid INTEGER)'.format(linie[0]))
+        lista=process_input(str(linie[1]))
+        for i in lista:
+            statement='INSERT OR REPLACE INTO '+linie[0]+' VALUES(?)'
+            c.execute(statement,(i,))
+            conn.commit()
+    #return listaGrupuri[:-1] because we don't want to retrieve ElementeEliminate as a group name
+    return listaGrupuri[:-1]
+
+
+
+
 # Function to create table with HC properties 
 def read_hc_props():
+    '''
+    Function to create HCprops table from user input file GroupHCprop.txt
+    where user specifies property name, HC ply number, allowables (FsL and FsW)
+    and the elements in the respective properties.
+    INPUT: GroupHCprop.txt file created by user, must be in the same directory
+    OUTPUT: table HCprops in database
+    '''
     file=open('GroupHCprop.txt','r')
     c.execute('DROP TABLE IF EXISTS HCprops') 
     for line in file:
@@ -160,11 +174,38 @@ def read_hc_props():
                 conn.commit()
         else:
             continue
-    
+
+def read_metal_props():
+    '''
+    Function to create MetalProps table from user input file MetalicProperties.txt
+    where user specifies Material Name, allowables Sigma Yield, Sigma Ultimate,
+    and the elements in the respective properties.
+    INPUT: MetalicProperties.txt file created by user, must be in the same directory
+    OUTPUT: table MetalicProps in database
+    '''
+    file=open('MetalicProperties.txt','r')
+    c.execute('DROP TABLE IF EXISTS MetalicProps') 
+    for line in file:
+        if line!='\n':
+            linie=line.split(',')
+            c.execute('CREATE TABLE IF NOT EXISTS MetalicProps (eid INTEGER,material TEXT,sigY REAL,sigU REAL)')
+            listaElm=process_input(str(linie[3]))
+            for i in listaElm:
+                statement='INSERT OR REPLACE INTO MetalicProps VALUES(?,?,?,?)'
+                c.execute(statement,(i,linie[0],linie[1],linie[2]))
+                conn.commit()
+        else:
+            continue
 
 # Function to process stress data and calculate HC MOS
 def create_hc_mos(case,fos_hc):
-
+    '''
+    Function to create HC_mos table by joining results from ElmStress table
+    and HCprops tabel
+    INPUT: fos_hc - parameter for calculating MOS, FLOAT number
+           case - index for case number
+    OUTPUT: write in Data_Results_HC worksheet, worksheet3
+    '''
     c.execute('CREATE TABLE IF NOT EXISTS HC_mos (eid INTEGER, pid INTEGER, shearXZ REAL,\
                shearYZ REAL, FsL REAL, FsW REAL, Subcase INTEGER, MOS REAL)')
     
@@ -186,6 +227,13 @@ def create_hc_mos(case,fos_hc):
 
 # Functie pentru scrierea rezultatelor de la HC MOS pentru toate cazurile, pentru fiecare group de elm
 def write_all_hc_mos(nume_group,coloana,index):
+    '''
+    Function to write all HC data in excel from table HC_mos
+    INPUT: nume_group - group name from GroupOutput.txt
+           coloana - index for column while printing groups +9 increment
+           index - index for case number
+    OUTPUT: write in Data_Results_HC worksheet, worksheet3
+    '''
     statement3='SELECT eid,pid,shearXZ,shearYZ,FsL,FsW,Subcase,min(MOS)\
                FROM HC_mos\
                WHERE eid IN (SELECT eid FROM '+nume_group+' )\
@@ -234,7 +282,38 @@ def write_min_hc_mos(nume_group,rows):
                 continue
             else:
                 worksheet4.write(rows, col+1, val)
-                    
+
+
+def create_table_vm(fosyVM,fosuVM,index):
+    '''
+    Function to create table with MOSy and MOSu for metalic parts values for specific groups and all cases
+    INPUT: Group Name - from GroupMetalic.txt as STRING
+           FOSy VM - factor of saftey inputed by user for MOSy calculation as FLOAT
+           FOSy VM - factor of saftey inputed by user for MOSy calculation as FLOAT
+           Index - subcase number as INTEGER
+    OUTPUT: Table ElmVM_MOS in ResultsData.db
+    '''
+
+    #Creat table pentru stocat informatiile min(SR)
+    c.execute('CREATE TABLE IF NOT EXISTS ElmVM_MOS (eid INTEGER, VM_stress REAL, sigY REAL, sigU REAL, layer TEXT, Subcase INTEGER, MOSy REAL, MOSu REAL)')
+    
+    statement='SELECT ElmVMstress.eid,ElmVMstress.vm_stress,MetalicProps.sigY,MetalicProps.sigU,ElmVMstress.layer,ElmVMstress.subcase\
+               FROM ElmVMstress\
+               INNER JOIN MetalicProps\
+               ON ElmVMstress.eid = MetalicProps.eid\
+               WHERE ElmVMstress.subcase = ?'
+    #selecteaza randul cu min(SR) pentru grupul de elemente  
+    c.execute(statement,(index,))
+    data=c.fetchall()
+    for values in data:
+        if values[2]==None:
+            break
+        else:            
+            statement2='INSERT OR REPLACE INTO ElmVM_MOS VALUES(?,?,?,?,?,?,?,?)'
+            #VM stress is given in Pa and we divided by 10^6 to transform it into MPa, for reading purposes
+            c.execute(statement2,(values[0],values[1]/1000000,values[2],values[3],values[4],values[5],\
+                                  ((values[2]*1000000)/(fosyVM*values[1]))-1,((values[3]*1000000)/(fosuVM*values[1]))-1))
+            conn.commit()                  
     
 def main():
     start_time = time.time()
@@ -276,7 +355,11 @@ def main():
 
         # Adauga in paranteze input_fisier[:-4]+'_stress.f06' daca ai spart in fisiere separate
         stress_to_database(input_fisier)
-        print("--- %s seconds to Stress extraction---" % (time.time() - start_time))
+        print("--- %s seconds to HC Stress extraction---" % (time.time() - start_time))
+
+        #introducerea rezultatelor pentru stress VonMises ale elm din material metalic
+        vm_stress_to_database(input_fisier)
+        print("--- %s seconds to Von Mises Stress extraction---" % (time.time() - start_time))
         
     else:
         pass
@@ -284,14 +367,17 @@ def main():
 
     '''---------------------------------------------------------------------
     Create tables with group names and specific EID, based on GroupOuput.txt
+    and GroupMetalic.txt
     - if tables exist, they will be deleted and written again
     ----------------------------------------------------------------------'''
     groupNames=read_groups()
+    groupNamesMetallic=read_groups_metalic()
     print("--- %s seconds to create tables from group names ---" % (time.time() - start_time))
 
 
     # Number of cases based on disctinct subcases present in ElmStrengthRatio Table
-    nr_cazuri=nrCazuri()
+    #nr_cazuri=nrCazuri()
+    nr_cazuri=(24,)
     print ('Number of cases',nr_cazuri[0])
 
 
@@ -302,6 +388,13 @@ def main():
     print("--- %s seconds to create tables with HC properties ---" % (time.time() - start_time))
 
 
+    '''-----------------------------------------------------------------------------------------
+    Create Table based on Metalic properties for allwoables based on eid
+    ------------------------------------------------------------------------------------------'''
+    read_metal_props()
+    print("--- %s seconds to create tables with Metalic properties ---" % (time.time() - start_time))
+
+
     '''----------------------------------------------------
     Process SR data and create table with results plus MOS
     -----------------------------------------------------'''
@@ -309,8 +402,6 @@ def main():
 
     if condition == '1':
         fosu_sr = input('Insert FOS for SR facing MOS calculation = ')
-        col=0
-        rows=1
         #Create table of results for min(SR) and MOS based on groups and subcases
         c.execute('DROP TABLE IF EXISTS ElmSR_MOS')
         for group in groupNames:
@@ -320,6 +411,7 @@ def main():
     elif condition == '2':
         print('NO SR file read and processed!')
 
+    c.execute('DROP TABLE IF EXISTS ElmStrengthRatio') 
 
     '''----------------------------------------------------------------------
     Process Stress data for HC MOS calculation 
@@ -327,8 +419,6 @@ def main():
     condition2 = input('Do you want to process Stress data for HC MOS calculation  ? 1-Yes, 2-No: ')
     
     if condition2 == '1':
-        rows2=1
-        col2=0
         fosu_hc = input('Insert FOS for HoneyComb MOS calculation = ')
         c.execute('DROP TABLE IF EXISTS HC_mos') 
         for i in range(nr_cazuri[0]):
@@ -338,7 +428,8 @@ def main():
     elif condition2 == '2':
         print('NO HC values processed!')
 
-
+    c.execute('DROP TABLE IF EXISTS ElmStress')
+    
     '''----------------------------------------------------------------------
     Write SR and Stress data results to excel 
     -------------------------------------------------------------------------'''  
@@ -362,9 +453,24 @@ def main():
         print('NO excel file printed!')
 
 
-    
-    fosy_parts = input('Insert FOSyield for VonMises MOSyield calculation for AL parts = ')
-    fosu_parts = input('Insert FOSultimate for VonMises MOSultimate calculation for AL parts = ')
+    '''----------------------------------------------------------
+    Process Von Mises data and create table with results and MOS
+    -----------------------------------------------------------'''
+    condition4 = input('Do you want to process Von Mises stress data and calculate MOS? 1-Yes, 2-No:')
+
+    if condition4 == '1':
+        fosy_vm = input('Insert FOSy for VonMises MOSy calculation = ')
+        fosu_vm = input('Insert FOSu for VonMises MOSu calculation = ')
+        #Create table of results for min(SR) and MOS based on groups and subcases
+        c.execute('DROP TABLE IF EXISTS ElmVM_MOS')
+        #for group in groupNamesMetal:
+        for i in range(nr_cazuri[0]):
+            create_table_vm(float(fosy_vm),float(fosu_vm),i+1)
+        print("--- %s seconds to read and process VM stress data ---" % (time.time() - start_time))
+    elif condition == '2':
+        print('NO VM stress data  read and processed!')
+
+
     
 
 
