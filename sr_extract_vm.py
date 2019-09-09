@@ -1,15 +1,27 @@
 '''
 Extras rezultate pentru VonMises Stress, elemente metalice
 '''
-import csv
+#import csv
 import sqlite3
-#import time
+import re
 
+
+'''
+Open and connect to database
+'''
+conn=sqlite3.connect('ResultsData.db', isolation_level='DEFERRED')
+conn.execute('pragma journal_mode=wal')
+c=conn.cursor()
+
+c.execute('''PRAGMA synchronous = OFF''')
+c.execute("BEGIN TRANSACTION")
 
 
 '''
 ===============================================================================
 Function for extracting and inserting values into Rezultate-VM-Stress.csv
+
+- Extract values from .f06 output file
 ================================================================================
 '''
 
@@ -64,24 +76,20 @@ def parse_stress_vm(input_file):
 ===============================================================================
 Functions for extracting and inserting values into ResultsData.db databse
 In table ElmVMstress
+
+- Extract values from .f06 output file
 ================================================================================
 '''
 
-conn=sqlite3.connect('ResultsData.db', isolation_level='DEFERRED')
-conn.execute('pragma journal_mode=wal')
-c=conn.cursor()
+# DEOCMENTEAZA LINILE DE MAI JOS DACA VREI SA CITESTI DIN F06
 
-c.execute('''PRAGMA synchronous = OFF''')
-c.execute("BEGIN TRANSACTION")
-
-
-def create_vm_table():
-    c.execute('CREATE TABLE IF NOT EXISTS ElmVMstress(eid INTEGER, vm_stress REAL, layer TEXT, subcase INTEGER)')
-
-def vm_stress_data_entry(eid, vm_stress, layer, subcase):
-    c.execute("INSERT INTO ElmVMstress VALUES(?, ?, ?, ?)",
-              (eid, vm_stress, layer, subcase))
-    conn.commit()
+##def create_vm_table():
+##    c.execute('CREATE TABLE IF NOT EXISTS ElmVMstress(eid INTEGER, vm_stress REAL, layer TEXT, subcase INTEGER)')
+##
+##def vm_stress_data_entry(eid, vm_stress, layer, subcase):
+##    c.execute("INSERT INTO ElmVMstress VALUES(?, ?, ?, ?)",
+##              (eid, vm_stress, layer, subcase))
+##    conn.commit()
 
 def parse_vm_stress(fisier_input):
     # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
@@ -121,10 +129,73 @@ def parse_vm_stress(fisier_input):
                 text=[]
     f.close()
 
-    print('Element Stress extracted!')
 
+
+'''
+===============================================================================
+Functions for extracting and inserting values into ResultsData.db databse
+In table ElmVMstress
+
+- Extract values from PCH output file
+================================================================================
+'''
+
+
+
+def create_vm_table():
+    c.execute('CREATE TABLE IF NOT EXISTS ElmVMstress(eid INTEGER, vm_stress REAL, layer TEXT, subcase INTEGER)')
+
+def vm_stress_data_entry(eid, vm_stress, layer, subcase):
+    c.execute("INSERT INTO ElmVMstress VALUES(?, ?, ?, ?)",
+              (eid, vm_stress, layer, subcase))
+    conn.commit()
+
+def parse_vm_stress2(fisier_input):
+    # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
+    with open(fisier_input, 'r') as f:
+        parse=False
+        count=0
+        for line in f:
+            if '$SUBCASE ID =' in line:
+                x=line.split()
+                if len(x)==5:
+                    caz=x[3]
+            if ' QUAD4 ' in line:
+                parse = True
+            elif ' TRIA3 ' in line:
+                parse = True
+            elif line.startswith('$TITLE'):
+                parse = False
+            if parse:
+                count+=1 #determin linia la care sunt
+                elements=line.split()
+                if elements[0]!='-CONT-':
+                    elmID=elements[0]
+                    plyID=elements[1]
+                    count=2
+                elif elements[0]=='-CONT-' and count==4:
+                    vm_z1=elements[2]
+                elif elements[0]=='-CONT-' and count==7:
+                    vm_z2=elements[1]
+                    if float(vm_z1)>float(vm_z2):
+                        vm_stress_data_entry(elmID,vm_z1,'Z1',caz)
+                    else:
+                        vm_stress_data_entry(elmID,vm_z2,'Z2',caz)
+                else:
+                    continue
+            else:
+                continue
+
+    f.close()
+
+
+'''
+Main call function
+'''
 def vm_stress_to_database(fisier_in):
     create_vm_table()
-    parse_vm_stress(fisier_in)
+    parse_vm_stress2(fisier_in)
     c.close()
     conn.close()
+
+#vm_stress_to_database('spacerider_landing_impact_loads.pch')
