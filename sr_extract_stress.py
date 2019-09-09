@@ -1,15 +1,23 @@
 '''
 Extras rezultate pentru Stress Elements
 '''
-import csv
+#import csv
 import sqlite3
-import time
+import re
 
-start_time = time.time()
+conn=sqlite3.connect('ResultsData.db', isolation_level='DEFERRED')
+conn.execute('pragma journal_mode=wal')
+c=conn.cursor()
+
+c.execute('''PRAGMA synchronous = OFF''')
+c.execute("BEGIN TRANSACTION")
+
 
 '''
 ===============================================================================
 Function for extracting and inserting values into Rezultate-Elm-Stress.csv
+
+-Extracting values from .f06 file
 ================================================================================
 '''
 
@@ -52,32 +60,28 @@ def parse_stress(input_file):
 ===============================================================================
 Functions for extracting and inserting values into resultsData.db databse
 In table ElmStress
+
+-Extracting values from .f06 file
 ================================================================================
 '''
 
-conn=sqlite3.connect('resultsData.db', isolation_level='DEFERRED')
-conn.execute('pragma journal_mode=wal')
-c=conn.cursor()
+# DECOMENTEAZA LINILE DE MAI JOS DACA FOLOSESTI CITIRE DIN F06
 
-c.execute('''PRAGMA synchronous = OFF''')
-#c.execute('''PRAGMA journal_mode = WAL''')
-c.execute("BEGIN TRANSACTION")
+##def create_table():
+##    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, normal1 REAL, normal2 REAL,\
+##               shear12 REAL, shearXZ REAL, shearYZ REAL, angle REAL, major REAL,minor REAL, shear REAL, subcase INTEGER)')
+##
+##def stress_data_entry(eid, pid, normal1, normal2, shear12, shearXZ, shearYZ, angle, major, minor, shear, subcase):
+##    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+##              (eid, pid, normal1, normal2, shear12, shearXZ, shearYZ, angle, major, minor, shear, subcase))
+##    conn.commit()
 
-
-def create_table():
-    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, normal1 REAL, normal2 REAL,\
-               shear12 REAL, shearXZ REAL, shearYZ REAL, angle REAL, major REAL,minor REAL, shear REAL, subcase INTEGER)')
-
-def stress_data_entry(eid, pid, normal1, normal2, shear12, shearXZ, shearYZ, angle, major, minor, shear, subcase):
-    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              (eid, pid, normal1, normal2, shear12, shearXZ, shearYZ, angle, major, minor, shear, subcase))
-    conn.commit()
-
-def parse_stress2():
+def parse_stress2(fisier_input):
     # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
-    with open('02_launch load case.f06', 'r') as f:
+    with open(fisier_input, 'r') as f:
         parse=False
         text =[]
+        caz=1
         for line in f:
             if '0' and 'SUBCASE' in line:
                 x=line.split()
@@ -102,11 +106,71 @@ def parse_stress2():
 
     print('Element Stress extracted!')
 
-create_table()
-parse_stress2()
-c.close()
-conn.close()
-print("--- %s seconds ---" % (time.time() - start_time))
-    
-##parse_stress('02_launch load case.f06')
-##print("--- %s seconds ---" % (time.time() - start_time))
+
+
+'''
+===============================================================================
+Functions for extracting and inserting values into resultsData.db databse
+In table ElmStress
+
+-Extracting values from PCH output file
+================================================================================
+'''
+
+def create_table():
+    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, shearXZ REAL, shearYZ REAL, subcase INTEGER)')
+
+def stress_data_entry(eid, pid, shearXZ, shearYZ, subcase):
+    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?)",
+              (eid, pid, shearXZ, shearYZ, subcase))
+    conn.commit()
+
+
+def parse_stress3(fisier_input):
+    # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
+    with open(fisier_input, 'r') as f:
+        parse=False
+        count=0
+        for line in f:
+            if '$SUBCASE ID =' in line:
+                x=line.split()
+                if len(x)==5:
+                    caz=x[3]
+            if 'QUAD4LC' in line:
+                parse = True
+            elif 'TRIA3LC' in line:
+                parse = True
+            elif line.startswith('$TITLE'):
+                parse = False
+            if parse:
+                count+=1 #determin linia la care sunt
+                elements=line.split()
+                if elements[0]!='-CONT-':
+                    elmID=elements[0]
+                    plyID=elements[1]
+                    count=2
+                elif elements[0]=='-CONT-' and count==3:
+                    #folosim regex pentru a identifica nr real atunci cand id de linie
+                    # din pch devine prea mare si se leaga de elements[3]
+                    match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
+                    elm=re.findall(match_number,line)
+                    shearYZ=elm[2]
+                    shearXZ=elements[2]
+                    stress_data_entry(elmID,plyID,shearXZ,shearYZ,caz)
+                else:
+                    continue
+            else:
+                continue
+    f.close()
+
+'''
+Main call function
+'''
+
+def stress_to_database(fisier_in):
+    create_table()
+    parse_stress3(fisier_in)
+    c.close()
+    conn.close()
+
+#stress_to_database('spacerider_landing_impact_loads.pch')
