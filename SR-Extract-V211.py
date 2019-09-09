@@ -2,6 +2,7 @@ import sqlite3
 from sr_extract_stress import stress_to_database
 from sr_extract_sr import sr_to_database
 from sr_extract_vm import vm_stress_to_database
+from sr_extract_solid import solid_stress_to_database
 from cleanf06 import clean_f06
 from patran_input import process_input
 import time
@@ -14,6 +15,8 @@ worksheet = workbook.add_worksheet('Data_Results_SR')
 worksheet2 = workbook.add_worksheet('Summary_SR_MOS')
 worksheet3 = workbook.add_worksheet('Data_Results_HC')
 worksheet4 = workbook.add_worksheet('Summary_HC_MOS')
+worksheet5 = workbook.add_worksheet('Data_Results_VM')
+worksheet6 = workbook.add_worksheet('Summary_VM')
 
 # Creare baza de date pentru stocarea datelor 
 conn=sqlite3.connect('ResultsData.db')
@@ -324,10 +327,13 @@ def main():
                             - Version 2.11 -
 	
 	Added functions:
-	- Insert all result data in database resultsData.db
+	- Read .f06 for strength ratio
+	- Read .pch for all stress
+	- Insert all result data in database ResultsData.db
 	- Use GroupsOutput.txt as element clasification by groups
-	- Use GroupHCproperties.txt as input for hc props for Elm
-	- Use GroupAL.txt as input for AL parts Elm groups
+	- Use GroupHCproperties.txt as input for HC props for Elm
+	- Use GroupMetalic.txt as input for metal parts groups
+	- Use MetalicProperties.txt as input for metalic props for Elm
 	- Output excel file with results 
 	- Output word document with table results
 	
@@ -335,6 +341,7 @@ def main():
     print (intro)
         
     input_fisier=input('Type the f06 file name:')
+    pch_fisier=input('Type the pch file name:')
 
 
     '''
@@ -351,15 +358,19 @@ def main():
 
         # Adauga in paranteze input_fisier[:-4]+'_stress.f06' daca ai spart in fisiere separate
         sr_to_database(input_fisier)
-        print("--- %s seconds to SR extraction---" % (time.time() - start_time))
+        print("--- %s seconds to SR extraction ---" % (time.time() - start_time))
+
+        #Adauga in paranteze input_fisier[:-4]+'_stress.f06' daca ai spart in fisiere separate
+        stress_to_database(pch_fisier)
+        print("--- %s seconds to HC Stress from quads extraction ---" % (time.time() - start_time))
 
         # Adauga in paranteze input_fisier[:-4]+'_stress.f06' daca ai spart in fisiere separate
-        stress_to_database(input_fisier)
-        print("--- %s seconds to HC Stress extraction---" % (time.time() - start_time))
-
+        solid_stress_to_database(pch_fisier)
+        print("--- %s seconds to HC Stress from solid extraction ---" % (time.time() - start_time))
+        
         #introducerea rezultatelor pentru stress VonMises ale elm din material metalic
-        vm_stress_to_database(input_fisier)
-        print("--- %s seconds to Von Mises Stress extraction---" % (time.time() - start_time))
+        vm_stress_to_database(pch_fisier)
+        print("--- %s seconds to Von Mises Stress extraction ---" % (time.time() - start_time))
         
     else:
         pass
@@ -373,12 +384,6 @@ def main():
     groupNames=read_groups()
     groupNamesMetallic=read_groups_metalic()
     print("--- %s seconds to create tables from group names ---" % (time.time() - start_time))
-
-
-    # Number of cases based on disctinct subcases present in ElmStrengthRatio Table
-    #nr_cazuri=nrCazuri()
-    nr_cazuri=(24,)
-    print ('Number of cases',nr_cazuri[0])
 
 
     '''-----------------------------------------------------------------------------------------
@@ -400,6 +405,13 @@ def main():
     -----------------------------------------------------'''
     condition = input('Do you want to process SR data and calculate MOS? 1-Yes, 2-No: ')
 
+
+
+    # Number of cases based on disctinct subcases present in ElmStrengthRatio Table
+    nr_cazuri=nrCazuri()
+    print ('Number of cases',nr_cazuri[0])
+
+
     if condition == '1':
         fosu_sr = input('Insert FOS for SR facing MOS calculation = ')
         #Create table of results for min(SR) and MOS based on groups and subcases
@@ -411,7 +423,6 @@ def main():
     elif condition == '2':
         print('NO SR file read and processed!')
 
-    c.execute('DROP TABLE IF EXISTS ElmStrengthRatio') 
 
     '''----------------------------------------------------------------------
     Process Stress data for HC MOS calculation 
@@ -427,9 +438,25 @@ def main():
         print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time)) 
     elif condition2 == '2':
         print('NO HC values processed!')
-
-    c.execute('DROP TABLE IF EXISTS ElmStress')
     
+    '''----------------------------------------------------------
+    Process Von Mises data and create table with results and MOS
+    -----------------------------------------------------------'''
+    condition4 = input('Do you want to process Von Mises stress data and calculate MOS? 1-Yes, 2-No:')
+
+    if condition4 == '1':
+        fosy_vm = input('Insert FOSy for VonMises MOSy calculation = ')
+        fosu_vm = input('Insert FOSu for VonMises MOSu calculation = ')
+        #Create table of results for min(SR) and MOS based on groups and subcases
+        c.execute('DROP TABLE IF EXISTS ElmVM_MOS')
+        #for group in groupNamesMetal:
+        for i in range(nr_cazuri[0]):
+            create_table_vm(float(fosy_vm),float(fosu_vm),i+1)
+        print("--- %s seconds to read and process VM stress data ---" % (time.time() - start_time))
+    elif condition4 == '2':
+        print('NO VM stress data  read and processed!')
+
+
     '''----------------------------------------------------------------------
     Write SR and Stress data results to excel 
     -------------------------------------------------------------------------'''  
@@ -451,27 +478,6 @@ def main():
         print("--- %s seconds to write excel file with SR and HC MOS results ---" % (time.time() - start_time))
     elif condition3 == '2':
         print('NO excel file printed!')
-
-
-    '''----------------------------------------------------------
-    Process Von Mises data and create table with results and MOS
-    -----------------------------------------------------------'''
-    condition4 = input('Do you want to process Von Mises stress data and calculate MOS? 1-Yes, 2-No:')
-
-    if condition4 == '1':
-        fosy_vm = input('Insert FOSy for VonMises MOSy calculation = ')
-        fosu_vm = input('Insert FOSu for VonMises MOSu calculation = ')
-        #Create table of results for min(SR) and MOS based on groups and subcases
-        c.execute('DROP TABLE IF EXISTS ElmVM_MOS')
-        #for group in groupNamesMetal:
-        for i in range(nr_cazuri[0]):
-            create_table_vm(float(fosy_vm),float(fosu_vm),i+1)
-        print("--- %s seconds to read and process VM stress data ---" % (time.time() - start_time))
-    elif condition == '2':
-        print('NO VM stress data  read and processed!')
-
-
-    
 
 
 
