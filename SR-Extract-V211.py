@@ -248,7 +248,7 @@ def write_all_hc_mos(nume_group,coloana,index):
 
     #scrie header pentru rezultate
     worksheet3.write(0,coloana,nume_group)
-    header=['EID','PID','Shear XZ','Shear YZ','FsL','FsW','Subcase','MOS HC']
+    header=['EID','PID','Shear XZ[Pa]','Shear YZ[Pa]','FsL[Pa]','FsW[Pa]','Subcase','MOS HC']
     for n,m in enumerate(header):
         worksheet3.write(1,n+coloana,m)
 
@@ -273,7 +273,7 @@ def write_min_hc_mos(nume_group,rows):
     data=c.fetchall()
 
     #scrie Headerul pentru tabelul de rezultate calculate
-    header=['Group Name','EID','PID','Shear XZ','Shear YZ','FsL','FsW','Subcase','MOS HC']
+    header=['Group Name','EID','PID','Shear XZ[Pa]','Shear YZ[Pa]','FsL[Pa]','FsW[Pa]','Subcase','MOS HC']
     for n,m in enumerate(header):
         worksheet4.write(0,n,m)
 
@@ -317,7 +317,68 @@ def create_table_vm(fosyVM,fosuVM,index):
             c.execute(statement2,(values[0],values[1]/1000000,values[2],values[3],values[4],values[5],\
                                   ((values[2]*1000000)/(fosyVM*values[1]))-1,((values[3]*1000000)/(fosuVM*values[1]))-1))
             conn.commit()                  
+
+
+
+# Functie pentru scrierea rezultatelor de la VonMises MOS pentru toate cazurile, pentru fiecare group de elm din MetalicGroups
+def write_all_vm_mos(nume_group,coloana,index):
+    '''
+    Function to write all VM MOS data in excel from table ElmVM_MOS based on subcase number
+    INPUT: nume_group - group name from GroupOutput.txt
+           coloana - index for column while printing groups +9 increment
+           index - index for case number
+    OUTPUT: write in Data_Results_HC worksheet, worksheet3
+    '''
+    statement3='SELECT eid,VM_stress,sigY,sigU,layer,Subcase,MOSy,min(MOSu)\
+               FROM ElmVM_MOS\
+               WHERE eid IN (SELECT eid FROM '+nume_group+' )\
+               AND eid NOT IN (SELECT eid FROM ElementeEliminate2)\
+               AND subcase = ?'
+    #selecteaza randul cu min(MOS pentru HC) pentru grupul de elemente  
+    c.execute(statement3,(index,))
+    data=c.fetchall()
+
+    #scrie header pentru rezultate
+    worksheet5.write(0,coloana,nume_group)
+    header=['EID','Von Mises Stress[MPa]','SigY[MPa]','SigU[MPa]','Layer','Subcase','MOSy','MOSu']
+    for n,m in enumerate(header):
+        worksheet5.write(1,n+coloana,m)
+
+    #scrie in worksheetul de resultate, toate datele de min MOS pentru fiecare caz corespunzator grupului  
+    for row in data:
+        for j, value in enumerate(row):
+            if value==None:
+                continue
+            else:
+                worksheet5.write(index+1, j+coloana, value)
+
+
+# Functie pentru scrierea valorilor minime ale MOS pentru HC pentru fiecare Group de elem
+def write_min_vm_mos(nume_group,rows):
+    statement4='SELECT eid,VM_stress,sigY,sigU,layer,Subcase,MOSy,min(MOSu)\
+               FROM ElmVM_MOS\
+               WHERE eid IN (SELECT eid FROM '+nume_group+' )\
+               AND eid NOT IN (SELECT eid FROM ElementeEliminate2)'
     
+    #selecteaza randul cu min(hc) pentru grupul de elemente
+    c.execute(statement4)
+    data=c.fetchall()
+
+    #scrie Headerul pentru tabelul de rezultate calculate
+    header=['Part Name','EID','Von Mises Stress[MPa]','SigY[MPa]','SigU[MPa]','Layer','Subcase','MOSy','MOSu']
+    for n,m in enumerate(header):
+        worksheet6.write(0,n,m)
+
+    #scrie in worksheetul de calcule stress, valorile minime pentru mos HC pe group   
+    worksheet6.write(rows,0,nume_group)
+    for i in data:
+        for col,val in enumerate(i):
+            if val==None:
+                continue
+            else:
+                worksheet6.write(rows, col+1, val)
+
+
 def main():
     start_time = time.time()
     intro = '''
@@ -400,16 +461,18 @@ def main():
     print("--- %s seconds to create tables with Metalic properties ---" % (time.time() - start_time))
 
 
-    '''----------------------------------------------------
-    Process SR data and create table with results plus MOS
-    -----------------------------------------------------'''
-    condition = input('Do you want to process SR data and calculate MOS? 1-Yes, 2-No: ')
-
-
 
     # Number of cases based on disctinct subcases present in ElmStrengthRatio Table
     nr_cazuri=nrCazuri()
     print ('Number of cases',nr_cazuri[0])
+
+
+
+
+    '''-------------------------------------------------------------------------------------------
+    Process SR data and create table with results plus MOS
+    -----------------------------------------------------'''
+    condition = input('Do you want to process SR data and calculate MOS? 1-Yes, 2-No: ')
 
 
     if condition == '1':
@@ -424,7 +487,7 @@ def main():
         print('NO SR file read and processed!')
 
 
-    '''----------------------------------------------------------------------
+    '''-------------------------------------------------------------------------------------------
     Process Stress data for HC MOS calculation 
     -------------------------------------------------------------------------'''
     condition2 = input('Do you want to process Stress data for HC MOS calculation  ? 1-Yes, 2-No: ')
@@ -439,7 +502,7 @@ def main():
     elif condition2 == '2':
         print('NO HC values processed!')
     
-    '''----------------------------------------------------------
+    '''-------------------------------------------------------------------------------------------
     Process Von Mises data and create table with results and MOS
     -----------------------------------------------------------'''
     condition4 = input('Do you want to process Von Mises stress data and calculate MOS? 1-Yes, 2-No:')
@@ -457,14 +520,16 @@ def main():
         print('NO VM stress data  read and processed!')
 
 
-    '''----------------------------------------------------------------------
+    '''---------------------------------------------------------------------------------------------
     Write SR and Stress data results to excel 
     -------------------------------------------------------------------------'''  
-    condition3 = input('Do you want to write SR and HC MOS data to excel? 1-Yes, 2-No: ')
+    condition3 = input('Do you want to write MOS results data to excel? 1-Yes, 2-No: ')
     if condition3 == '1':
         rows=1
+        rows_vm=1
         col_sr=0
         col_stress=0
+        col_vm=0
         # Write results from ElmSR_MOS table in db to excel
         for group in groupNames:
             for i in range(nr_cazuri[0]):
@@ -473,7 +538,13 @@ def main():
             write_min_hc_mos(group,rows)
             col_sr+=6
             col_stress+=9
-            rows+=1        
+            rows+=1
+        for groupM in groupNamesMetallic:
+            for j in range(nr_cazuri[0]):
+                write_all_vm_mos(groupM,col_vm,j+1)
+            write_min_vm_mos(groupM,rows_vm)
+            col_vm+=9
+            rows_vm+=1
         workbook.close()
         print("--- %s seconds to write excel file with SR and HC MOS results ---" % (time.time() - start_time))
     elif condition3 == '2':
