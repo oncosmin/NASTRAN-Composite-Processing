@@ -173,4 +173,3 @@ def stress_to_database(fisier_in):
     c.close()
     conn.close()
 
-#stress_to_database('spacerider_landing_impact_loads.pch')

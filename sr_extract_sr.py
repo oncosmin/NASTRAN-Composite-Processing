@@ -1,7 +1,7 @@
 '''
 Extras rezultate pentru Strength Ratio
 '''
-import csv
+#import csv
 import sqlite3
 #import time
 

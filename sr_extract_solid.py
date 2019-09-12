@@ -1,7 +1,7 @@
 '''
 Script to extract Shear XZ and YZ Stress from solid elements HEXA
 '''
-import csv
+
 import sqlite3
 #import time
 
@@ -68,4 +68,3 @@ def solid_stress_to_database(fisier_in):
     c.close()
     conn.close()
 
-#solid_stress_to_database('spacerider_landing_impact_loads.pch')
