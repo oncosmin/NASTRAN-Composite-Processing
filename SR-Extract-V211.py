@@ -3,7 +3,6 @@ from sr_extract_stress import stress_to_database
 from sr_extract_sr import sr_to_database
 from sr_extract_vm import vm_stress_to_database
 from sr_extract_solid import solid_stress_to_database
-from cleanf06 import clean_f06
 from patran_input import process_input
 import time
 from xlsxwriter.workbook import Workbook
@@ -119,7 +118,7 @@ def write_sr(group_name,rows,column,index_case):
 
 # Funtion to create Tables in database from GroupOutput.txt
 def read_groups():
-    file=open('GroupOutput.txt','r')
+    file=open('INPUT/GroupOutput.txt','r')
     listaGrupuri=[]
     for line in file:
         linie=line.split(',')
@@ -137,7 +136,7 @@ def read_groups():
 
 # Funtion to create Tables in database from GroupMetalic.txt
 def read_groups_metalic():
-    file=open('GroupMetalic.txt','r')
+    file=open('INPUT/GroupMetalic.txt','r')
     listaGrupuri=[]
     for line in file:
         linie=line.split(',')
@@ -164,7 +163,7 @@ def read_hc_props():
     INPUT: GroupHCprop.txt file created by user, must be in the same directory
     OUTPUT: table HCprops in database
     '''
-    file=open('GroupHCprop.txt','r')
+    file=open('INPUT/GroupHCprop.txt','r')
     c.execute('DROP TABLE IF EXISTS HCprops') 
     for line in file:
         if line!='\n':
@@ -186,7 +185,7 @@ def read_metal_props():
     INPUT: MetalicProperties.txt file created by user, must be in the same directory
     OUTPUT: table MetalicProps in database
     '''
-    file=open('MetalicProperties.txt','r')
+    file=open('INPUT/MetalicProperties.txt','r')
     c.execute('DROP TABLE IF EXISTS MetalicProps') 
     for line in file:
         if line!='\n':
@@ -382,21 +381,40 @@ def write_min_vm_mos(nume_group,rows):
 def main():
     start_time = time.time()
     intro = '''
-    ------------------------------------------------------------------
+ 
+                                                              
+              @@@@@@@     @@@@@@@@@@            @@@@@@      @    
+           @@@@@@@@@@@    @@@@@@@@@@@@        @@@@@@      @@     
+          @@@@@           @@@@     @@@@     @@@@@@       @@       
+          @@@@@           @@@@     @@@@    @@@@@       @@@    @@
+           @@@@@@@        @@@@    @@@@    @@@@@      @@@@    @@@@
+             @@@@@@@@     @@@@@@@@@@@     @@@@@@    @@@@     @@@@@ 
+                 @@@@@@   @@@@   @@@@      @@@@@  @@@@@@    @@@@@  
+                 @@@@@@   @@@@    @@@@      @@@@@         @@@@@@   
+          @@@@@@@@@@@@    @@@@     @@@@      @@@@@@@@@@@@@@@@@@    
+          @@@@@@@@@@@     @@@@      @@@@       @@@@@@@@@@@@@@      
+                                                  @@@@@@@@
+                                                  
+    ==================================================================
                  Space Rider Cold Structure Data Analysis
-    ------------------------------------------------------------------
+    ==================================================================
                             - Version 2.11 -
 	
 	Added functions:
 	- Read .f06 for strength ratio
 	- Read .pch for all stress
 	- Insert all result data in database ResultsData.db
-	- Use GroupsOutput.txt as element clasification by groups
-	- Use GroupHCproperties.txt as input for HC props for Elm
+	- Use GroupsOutput.txt to define composite element groups
+	- Use GroupHCproperties.txt as input for HC props for elements
 	- Use GroupMetalic.txt as input for metal parts groups
-	- Use MetalicProperties.txt as input for metalic props for Elm
-	- Output excel file with results 
-	- Output word document with table results
+	- Use MetalicProperties.txt as input for metalic properties
+
+        Workflow:
+        - Insert name of .f06 file with extension included
+        - Insert name of .pch file with extension included
+        - Create database with stress and strength ratio values
+        - Process data, calculate MOS
+        - Output results into excel file 
 	
     '''
     print (intro)
@@ -469,7 +487,7 @@ def main():
 
 
 
-    '''-------------------------------------------------------------------------------------------
+    '''-----------------------------------------------------
     Process SR data and create table with results plus MOS
     -----------------------------------------------------'''
     condition = input('Do you want to process SR data and calculate MOS? 1-Yes, 2-No: ')
@@ -487,7 +505,7 @@ def main():
         print('NO SR file read and processed!')
 
 
-    '''-------------------------------------------------------------------------------------------
+    '''-------------------------------------------------------------------------
     Process Stress data for HC MOS calculation 
     -------------------------------------------------------------------------'''
     condition2 = input('Do you want to process Stress data for HC MOS calculation  ? 1-Yes, 2-No: ')
@@ -502,7 +520,7 @@ def main():
     elif condition2 == '2':
         print('NO HC values processed!')
     
-    '''-------------------------------------------------------------------------------------------
+    '''-----------------------------------------------------------
     Process Von Mises data and create table with results and MOS
     -----------------------------------------------------------'''
     condition4 = input('Do you want to process Von Mises stress data and calculate MOS? 1-Yes, 2-No:')
@@ -520,7 +538,7 @@ def main():
         print('NO VM stress data  read and processed!')
 
 
-    '''---------------------------------------------------------------------------------------------
+    '''-------------------------------------------------------------------------
     Write SR and Stress data results to excel 
     -------------------------------------------------------------------------'''  
     condition3 = input('Do you want to write MOS results data to excel? 1-Yes, 2-No: ')
@@ -551,15 +569,11 @@ def main():
         print('NO excel file printed!')
 
 
-
-    word=input('Do you want to write word document with results in table form? 1-yes, 2-no: ')
-
-    if word=='1':
-        print('not writing')
-
-
-
-
+    '''-------------------------------------------------------------------------
+    Copy tables from excel to word 
+    -------------------------------------------------------------------------'''  
+    #word=input('Do you want to write word document with results in table form? 1-yes, 2-no: ')
+    
     c.close()
     conn.close()
     end = time.time()
