@@ -1,9 +1,10 @@
 """
 +++++++++++++++++++++ PATRAN INPUT CONVERTER +++++++++++++++++++++++++++++++++
 
-This function takes the input for the elements selected in MSC Patran notation
-system and converts it to a list of elements that will be further used in the
-program for creating the group of elements for each part/assembly.
+This function takes the input for the elements selected in MSC Patran
+conventional notation system and converts it to a list of elements that
+will be further used in the program for creating the group of elements for
+each part/assembly.
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 """
