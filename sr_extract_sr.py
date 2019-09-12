@@ -3,13 +3,15 @@ Extras rezultate pentru Strength Ratio
 '''
 import csv
 import sqlite3
-import time
+#import time
 
-start_time = time.time()
+
 
 '''
 ===============================================================================
 Function for extracting and inserting values into Rezultate-Elm-SR.csv
+
+- Extracting values from .f06 files by PARAM SRCOMPS YES output.
 ================================================================================
 '''
 
@@ -57,7 +59,9 @@ In table ElmStrengthRatio
 ================================================================================
 '''
 
-conn=sqlite3.connect('resultsData.db')
+#Comenteaza daca sunt probleme la connectarea bazei de date
+
+conn=sqlite3.connect('ResultsData.db')
 conn.execute('pragma journal_mode=wal')
 c=conn.cursor()
 
@@ -74,11 +78,13 @@ def sr_data_entry(eid, pid, sr, subcase):
     conn.commit()
 
 
-def parse_data2():
+def parse_data2(fisier_input):
     # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
-    with open('02_launch load case.f06', 'r') as f:
+    with open(fisier_input, 'r') as f:
         parse=False
         text =[]
+        # Daca spargi fisierul .f06 in mai multe separate, scoate commentul de jos.
+        #caz=1
         for line in f:
             if '0' and 'SUBCASE' in line:
                 x=line.split()
@@ -106,18 +112,12 @@ def parse_data2():
     f.close()
     print ('Element Strength Ratio extracted!')
 
-create_table()
-parse_data2()
-c.close()
-conn.close()
 
-##def read_db():
-##    c.execute('SELECT eid,pid,sr,subcase\
-##              FROM ElmStrengthRatio\
-##              WHERE eid BETWEEN ? AND ? AND subcase =?',(250000,252542,3))
-##    for row in c.fetchall():
-##        print(row)
-##
-##read_db()
+def sr_to_database(fisier_in):
+    create_table()
+    parse_data2(fisier_in)
+    c.close()
+    conn.close()
 
-print("--- %s seconds ---" % (time.time() - start_time))
+
+
