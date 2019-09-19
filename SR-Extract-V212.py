@@ -262,7 +262,7 @@ def write_all_hc_mos(nume_group,coloana,index):
                FROM HC_mos\
                WHERE eid IN (SELECT eid FROM '+nume_group+' )\
                AND eid NOT IN (SELECT eid FROM ElementeEliminate)\
-               AND subcase = ?'
+               AND Subcase = ?'
     #selecteaza randul cu min(MOS pentru HC) pentru grupul de elemente  
     c.execute(statement3,(index,))
     data=c.fetchall()
@@ -308,45 +308,56 @@ def write_min_hc_mos(nume_group,rows):
                 worksheet4.write(rows, col+1, val)
 
 
-def create_table_vm(group_name,index):
+def create_table_vm(index):
     '''
-    Function to create table with MOSy and MOSu for metalic parts values for specific groups and all cases
-    INPUT: Group Name - from GroupMetalic.txt as STRING
-           FOSy VM - factor of saftey inputed by user for MOSy calculation as FLOAT
-           FOSy VM - factor of saftey inputed by user for MOSy calculation as FLOAT
-           Index - subcase number as INTEGER
-    OUTPUT: Table ElmVM_MOS in ResultsData.db
+    Function to create table with stress and allowables for metalic parts values for  all vm elements
+    INPUT: Index - subcase number as INTEGER
+    OUTPUT: Table ElmVM_Stress in ResultsData.db
     '''
 
     #Creat table pentru stocat informatiile min(SR)
     c.execute('CREATE TABLE IF NOT EXISTS ElmVM_Stress (eid INTEGER, VM_stress REAL, sigY REAL, sigU REAL, layer TEXT, Subcase INTEGER)')
-
-    c.execute('CREATE TABLE IF NOT EXISTS ElmVM_MOS (eid INTEGER, VM_stress REAL, sigY REAL, sigU REAL, layer TEXT, Subcase INTEGER,\
-                fos_y REAL, fos_u REAL, MOSy REAL, MOSu REAL)')
-
-    
+    #Select statement of elment stress and element allowables from MetalicProps group
     statement='SELECT ElmVMstress.eid,ElmVMstress.vm_stress,MetalicProps.sigY,MetalicProps.sigU,ElmVMstress.layer,ElmVMstress.subcase\
                FROM ElmVMstress\
                INNER JOIN MetalicProps\
                ON ElmVMstress.eid = MetalicProps.eid\
                WHERE ElmVMstress.subcase = ?'
+    
     #selecteaza randul cu min(SR) pentru grupul de elemente  
     c.execute(statement,(index,))
     data=c.fetchall()
-    for values in data:
-        if values[2]==None:
-            break
-        else:            
-            statement2='INSERT OR REPLACE INTO ElmVM_MOS VALUES(?,?,?,?,?,?)'
-            #VM stress is given in Pa and we divided by 10^6 to transform it into MPa, for reading purposes
-            c.execute(statement2,values)
+    for values in data:            
+        statement2='INSERT OR REPLACE INTO ElmVM_STRESS VALUES(?,?,?,?,?,?)'
+        c.execute(statement2,values)
+        conn.commit()
+
+
+def create_mos_vm(group_name,index):   
+    c.execute('CREATE TABLE IF NOT EXISTS ElmVM_MOS (eid INTEGER, VM_stress REAL, sigY REAL, sigU REAL, layer TEXT, Subcase INTEGER,\
+                fos_y REAL, fos_u REAL, MOSy REAL, MOSu REAL)')
+
+    c.execute('SELECT fos_y FROM {}'.format(group_name))
+    fosY=c.fetchone()
+    c.execute('SELECT fos_u FROM {}'.format(group_name))
+    fosU=c.fetchone()
+
+    statement='SELECT * FROM ElmVM_Stress\
+               WHERE eid IN (SELECT eid FROM '+group_name+')\
+               AND Subcase = ?'
+
+    c.execute(statement,(index,))
+    dataVM_stress = c.fetchall()
+    statement='INSERT OR REPLACE INTO ElmVM_MOS VALUES(?,?,?,?,?,?,?,?,?,?)'
+    for values in dataVM_stress:
+        if values[1]==None:
+            continue
+        else:
+        #VM stress is given in Pa and we divided by 10^6 to transform it into MPa, for reading purposes
+            c.execute(statement,(values[0],values[1]/1000000,values[2],values[3],values[4],values[5],\
+                                 fosY[0],fosU[0],((values[2]*1000000)/(fosY[0]*values[1]))-1,\
+                                 ((values[3]*1000000)/(fosU[0]*values[1]))-1))
             conn.commit()
-
-    
-    
-##    c.execute(statement2,(values[0],values[1]/1000000,values[2],values[3],values[4],values[5],\
-##                                  ((values[2]*1000000)/(fosyVM*values[1]))-1,((values[3]*1000000)/(fosuVM*values[1]))-1))
-
 
 
 
@@ -359,7 +370,7 @@ def write_all_vm_mos(nume_group,coloana,index):
            index - index for case number
     OUTPUT: write in Data_Results_HC worksheet, worksheet3
     '''
-    statement3='SELECT eid,VM_stress,sigY,sigU,layer,Subcase,MOSy,min(MOSu)\
+    statement3='SELECT eid,VM_stress,sigY,sigU,layer,Subcase,fos_y,fos_u,MOSy,min(MOSu)\
                FROM ElmVM_MOS\
                WHERE eid IN (SELECT eid FROM '+nume_group+' )\
                AND eid NOT IN (SELECT eid FROM ElementeEliminate2)\
@@ -370,7 +381,7 @@ def write_all_vm_mos(nume_group,coloana,index):
 
     #scrie header pentru rezultate
     worksheet5.write(0,coloana,nume_group)
-    header=['EID','Von Mises Stress[MPa]','SigY[MPa]','SigU[MPa]','Layer','Subcase','MOSy','MOSu']
+    header=['EID','Von Mises Stress[MPa]','SigY[MPa]','SigU[MPa]','Layer','Subcase','FOSy','FOSu','MOSy','MOSu']
     for n,m in enumerate(header):
         worksheet5.write(1,n+coloana,m)
 
@@ -385,7 +396,7 @@ def write_all_vm_mos(nume_group,coloana,index):
 
 # Functie pentru scrierea valorilor minime ale MOS pentru HC pentru fiecare Group de elem
 def write_min_vm_mos(nume_group,rows):
-    statement4='SELECT eid,VM_stress,sigY,sigU,layer,Subcase,MOSy,min(MOSu)\
+    statement4='SELECT eid,VM_stress,sigY,sigU,layer,Subcase,fos_y,fos_u,MOSy,min(MOSu)\
                FROM ElmVM_MOS\
                WHERE eid IN (SELECT eid FROM '+nume_group+' )\
                AND eid NOT IN (SELECT eid FROM ElementeEliminate2)'
@@ -395,7 +406,7 @@ def write_min_vm_mos(nume_group,rows):
     data=c.fetchall()
 
     #scrie Headerul pentru tabelul de rezultate calculate
-    header=['Part Name','EID','Von Mises Stress[MPa]','SigY[MPa]','SigU[MPa]','Layer','Subcase','MOSy','MOSu']
+    header=['Part Name','EID','Von Mises Stress[MPa]','SigY[MPa]','SigU[MPa]','Layer','Subcase','FOSy','FOSu','MOSy','MOSu']
     for n,m in enumerate(header):
         worksheet6.write(0,n,m)
 
@@ -493,7 +504,7 @@ def main():
     - if tables exist, they will be deleted and written again
     ----------------------------------------------------------------------'''
     groupNames=read_groups()
-    groupNamesMetallic=read_groups_metalic()
+    groupNamesMetal=read_groups_metalic()
     print("--- %s seconds to create tables from group names ---" % (time.time() - start_time))
 
 
@@ -549,9 +560,9 @@ def main():
         c.execute('CREATE INDEX index_stress ON ElmStress(eid,pid,subcase)')
         #fosu_hc = input('Insert FOS for HoneyComb MOS calculation = ')
         c.execute('DROP TABLE IF EXISTS HC_stress')
-        for i in range(nr_cazuri[0]):
+        for j in range(nr_cazuri[0]):
             # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
-            create_hc_table(i+1)
+            create_hc_table(j+1)
         print("--- %s seconds to create HC stress table in database ---" % (time.time() - start_time))
 
         c.execute('DROP INDEX IF EXISTS index_hc')
@@ -574,13 +585,20 @@ def main():
     if condition4 == '1':
         #fosy_vm = input('Insert FOSy for VonMises MOSy calculation = ')
         #fosu_vm = input('Insert FOSu for VonMises MOSu calculation = ')
-        #Create table of results for min(SR) and MOS based on groups and subcases
+        c.execute('DROP INDEX IF EXISTS vm_stress')
+        c.execute('CREATE INDEX vm_stress ON ElmVMstress(eid,subcase)')
         c.execute('DROP TABLE IF EXISTS ElmVM_Stress')
-        c.execute('DROP TABLE IF EXISTS ElmVM_MOS')
-        for groupa in groupNamesMetal:
-            for i in range(nr_cazuri[0]):
-                create_table_vm(groupa,i+1)
+        for m in range(nr_cazuri[0]):
+            create_table_vm(m+1)
         print("--- %s seconds to read and process VM stress data ---" % (time.time() - start_time))
+
+        c.execute('DROP INDEX IF EXISTS vm_stress')
+        c.execute('CREATE INDEX vm_stress ON ElmVM_Stress(eid,Subcase)')
+        c.execute('DROP TABLE IF EXISTS ElmVM_MOS')
+        for groupb in groupNamesMetal:
+            for n in range(nr_cazuri[0]):
+                create_mos_vm(groupb,n+1)
+        print("--- %s seconds to read and process VM MOS data ---" % (time.time() - start_time))
     elif condition4 == '2':
         print('NO VM stress data  read and processed!')
 
@@ -595,6 +613,13 @@ def main():
         col_sr=0
         col_stress=0
         col_vm=0
+        #Index for MOS tables for faster query and writing
+        c.execute('DROP INDEX IF EXISTS sr_mos')
+        c.execute('CREATE INDEX sr_mos ON ElmSR_MOS(eid,Subcase)')
+        c.execute('DROP INDEX IF EXISTS idx_hc_mos')
+        c.execute('CREATE INDEX idx_hc_mos ON HC_mos(eid,Subcase)')
+        c.execute('DROP INDEX IF EXISTS vm_mos')
+        c.execute('CREATE INDEX vm_mos ON ElmVM_MOS(eid,Subcase)')        
         # Write results from ElmSR_MOS table in db to excel
         for group in groupNames:
             for i in range(nr_cazuri[0]):
@@ -604,11 +629,11 @@ def main():
             col_sr+=7
             col_stress+=10
             rows+=1
-        for groupM in groupNamesMetallic:
+        for groupM in groupNamesMetal:
             for j in range(nr_cazuri[0]):
                 write_all_vm_mos(groupM,col_vm,j+1)
             write_min_vm_mos(groupM,rows_vm)
-            col_vm+=9
+            col_vm+=11
             rows_vm+=1
         workbook.close()
         print("--- %s seconds to write excel file with SR and HC MOS results ---" % (time.time() - start_time))
