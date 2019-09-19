@@ -201,7 +201,7 @@ def read_metal_props():
             continue
 
 # Function to process stress data and calculate HC MOS
-def create_hc_mos(case,group_name):
+def create_hc_table(case):
     '''
     Function to create HC_mos and HC_stress table by joining results from ElmStress table
     and HCprops tabel
@@ -212,10 +212,7 @@ def create_hc_mos(case,group_name):
     #create table for all elements from HC with allowables and ply identification
     c.execute('CREATE TABLE IF NOT EXISTS HC_stress (eid INTEGER, pid INTEGER, shearXZ REAL,\
                shearYZ REAL, FsL REAL, FsW REAL, Subcase INTEGER)')
-    #create table with HC MOS based on calculation from input text allowables
-    c.execute('CREATE TABLE IF NOT EXISTS HC_mos (eid INTEGER, pid INTEGER, shearXZ REAL,\
-               shearYZ REAL, FsL REAL, FsW REAL, Subcase INTEGER,fos_hc REAL, MOS REAL)')
-    
+
     statement = 'SELECT ElmStress.eid, ElmStress.pid, ElmStress.shearXZ, ElmStress.shearYZ,\
                         HCprops.FsL, HCprops.FsW, ElmStress.subcase\
                  FROM ElmStress\
@@ -231,6 +228,11 @@ def create_hc_mos(case,group_name):
         c.execute(statement2,line)
         conn.commit()
 
+def create_hc_mos(caz,group_name):
+    #create table with HC MOS based on calculation from input text allowables
+    c.execute('CREATE TABLE IF NOT EXISTS HC_mos (eid INTEGER, pid INTEGER, shearXZ REAL,\
+               shearYZ REAL, FsL REAL, FsW REAL, Subcase INTEGER,fos_hc REAL, MOS REAL)')
+    
     c.execute('SELECT fos_hc FROM {}'.format(group_name))
     fosuHC=c.fetchone()
 
@@ -238,7 +240,7 @@ def create_hc_mos(case,group_name):
                 WHERE eid IN (SELECT eid FROM '+group_name+')\
                 AND Subcase = ?'
     
-    c.execute(statement3,(case,))
+    c.execute(statement3,(caz,))
     dataHC_mos = c.fetchall()
     statement4='INSERT OR REPLACE INTO HC_mos VALUES(?,?,?,?,?,?,?,?,?)'
     for line2 in dataHC_mos:
@@ -542,19 +544,25 @@ def main():
     condition2 = input('Do you want to process Stress data for HC MOS calculation  ? 1-Yes, 2-No: ')
     
     if condition2 == '1':
+        
         c.execute('DROP INDEX IF EXISTS index_stress')
         c.execute('CREATE INDEX index_stress ON ElmStress(eid,pid,subcase)')
-        c.execute('DROP INDEX IF EXISTS index_hc')
-        c.execute('CREATE INDEX index_hc ON HCprops(eid,pid)')
         #fosu_hc = input('Insert FOS for HoneyComb MOS calculation = ')
-        
         c.execute('DROP TABLE IF EXISTS HC_stress')
+        for i in range(nr_cazuri[0]):
+            # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
+            create_hc_table(i+1)
+        print("--- %s seconds to create HC stress table in database ---" % (time.time() - start_time))
+
+        c.execute('DROP INDEX IF EXISTS index_hc')
+        c.execute('CREATE INDEX index_hc ON HC_stress(eid,Subcase)')
         c.execute('DROP TABLE IF EXISTS HC_mos')
         for groups in groupNames:
-            for i in range(nr_cazuri[0]):
+            for k in range(nr_cazuri[0]):
                 # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
-                create_hc_mos(i+1,groups)
-        print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time)) 
+                create_hc_mos(k+1,groups)
+        print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time))
+
     elif condition2 == '2':
         print('NO HC values processed!')
     
