@@ -446,9 +446,9 @@ def main():
 	- Read .f06 for strength ratio
 	- Read .pch for all stress
 	- Insert all result data in database ResultsData.db
-	- Use GroupsOutput.txt to define composite element groups
-	- Use GroupHCproperties.txt as input for HC props for elements
-	- Use GroupMetalic.txt as input for metal parts groups
+	- Use GroupsOutput.txt to define composite part groups
+	- Use GroupHCproperties.txt as input for HC properties
+	- Use GroupMetalic.txt as input for metalic part groups
 	- Use MetalicProperties.txt as input for metalic properties
 	- Implemented FOS into input text, no user input requested
 
