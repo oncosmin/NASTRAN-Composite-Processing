@@ -11,6 +11,8 @@ each part/assembly.
 
 def read_input(patran_input):
     alist=patran_input.split(' ')[1:]
+    while '' in alist:
+        alist.remove('')
     return(alist)
 
 
