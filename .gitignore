@@ -1,0 +1,8 @@
+# ignore test folder
+test/
+
+# ignore results database
+ResultsData.db
+
+# ignore 2input_Parachute
+2input_Parachute/
