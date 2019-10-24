@@ -201,6 +201,8 @@ def parse_vm_solid_stress2(fisier_input):
                     caz=x[3]
             if ' HEXA ' in line:
                 parse = True
+            if ' TETRA ' in line:
+                parse = True
             elif line.startswith('$TITLE'):
                 parse = False
             if parse:
@@ -234,3 +236,5 @@ def vm_stress_to_database(fisier_in):
     c.close()
     conn.close()
 
+##test input
+#vm_stress_to_database('01_re-entry_load_case.pch')
