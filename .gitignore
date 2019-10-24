@@ -1,5 +1,6 @@
 # ignore test folder
 test/
+__pycache__/
 
 # ignore results database
 ResultsData.db
