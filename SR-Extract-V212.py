@@ -440,11 +440,11 @@ def main():
     ==================================================================
                  Space Rider Cold Structure Data Analysis
     ==================================================================
-                            - Version 2.12 -
+                            - Version 2.13 -
 	
 	Added functions:
 	- Read .f06 for strength ratio
-	- Read .pch for all stress
+	- Read .pch for all stress (QUAD, TRIA and HEXA)
 	- Insert all result data in database ResultsData.db
 	- Use GroupsOutput.txt to define composite part groups
 	- Use GroupHCproperties.txt as input for HC properties
