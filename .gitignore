@@ -6,3 +6,5 @@ ResultsData.db
 
 # ignore 2input_Parachute
 2input_Parachute/
+01_re-entry_load_case.f06
+01_re-entry_load_case.pch
