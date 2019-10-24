@@ -136,7 +136,7 @@ def parse_vm_stress(fisier_input):
 Functions for extracting and inserting values into ResultsData.db databse
 In table ElmVMstress
 
-- Extract values from PCH output file
+- Extract VM stress from QUAD,TRIA and HEXA elms from PCH output file
 ================================================================================
 '''
 
@@ -150,6 +150,7 @@ def vm_stress_data_entry(eid, vm_stress, layer, subcase):
               (eid, vm_stress, layer, subcase))
     conn.commit()
 
+# Functie de extragere a Von Mises stress din elemente QUAD si TRIA omogene, materiale metalice
 def parse_vm_stress2(fisier_input):
     # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
     with open(fisier_input, 'r') as f:
@@ -171,7 +172,6 @@ def parse_vm_stress2(fisier_input):
                 elements=line.split()
                 if elements[0]!='-CONT-':
                     elmID=elements[0]
-                    plyID=elements[1]
                     count=2
                 elif elements[0]=='-CONT-' and count==4:
                     vm_z1=elements[2]
@@ -188,6 +188,41 @@ def parse_vm_stress2(fisier_input):
 
     f.close()
 
+#Functie de extragere a Von Mises stress din elemente solide omogene HEXA, mat metalice
+def parse_vm_solid_stress2(fisier_input):
+    # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
+    with open(fisier_input, 'r') as f:
+        parse=False
+        count=0
+        for line in f:
+            if '$SUBCASE ID =' in line:
+                x=line.split()
+                if len(x)==5:
+                    caz=x[3]
+            if ' HEXA ' in line:
+                parse = True
+            elif line.startswith('$TITLE'):
+                parse = False
+            if parse:
+                count+=1 #determin linia la care sunt
+                elements=line.split() #split componente linie
+                if elements[0]!='-CONT-':
+                    elmID=elements[0]
+                    count=2
+                elif elements[0]=='-CONT-' and count==5:
+                    #folosim regex pentru a identifica nr real atunci cand id de linie
+                    # din pch devine prea mare si se leaga de elements[3]
+                    match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
+                    elm=re.findall(match_number,line)
+                    vm_solid=elm[2] #al 3 lea element din linie deoarece nu citeste CONT
+                    vm_stress_data_entry(elmID,vm_solid,'Solid',caz)
+                else:
+                    continue
+            else:
+                continue
+
+    f.close()
+
 
 '''
 Main call function
@@ -195,6 +230,7 @@ Main call function
 def vm_stress_to_database(fisier_in):
     create_vm_table()
     parse_vm_stress2(fisier_in)
+    parse_vm_solid_stress2(fisier_in)
     c.close()
     conn.close()
 
