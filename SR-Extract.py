@@ -444,7 +444,7 @@ def main():
 	
 	Added functions:
 	- Read .f06 for strength ratio
-	- Read .pch for all stress (QUAD, TRIA and HEXA)
+	- Read .pch for all stress (QUAD, TRIA, HEXA and TETRA)
 	- Insert all result data in database ResultsData.db
 	- Use GroupsOutput.txt to define composite part groups
 	- Use GroupHCproperties.txt as input for HC properties
