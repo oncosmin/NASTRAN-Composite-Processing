@@ -3,9 +3,13 @@ test/
 __pycache__/
 
 # ignore results database
-ResultsData.db
+*.db
 
 # ignore 2input_Parachute
 2input_Parachute/
-01_re-entry_load_case.f06
-01_re-entry_load_case.pch
+
+
+#ignore all result files
+*.pch
+*.f06
+*.xlsx
