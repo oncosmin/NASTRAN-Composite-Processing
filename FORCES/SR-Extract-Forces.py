@@ -1,4 +1,3 @@
-import csv
 import sqlite3
 import time
 from patran_input import process_input
@@ -7,10 +6,9 @@ from xlsxwriter.workbook import Workbook
 '''
 Open and connect to database forces
 '''
-conn=sqlite3.connect('ResultsDataForces.db', isolation_level='DEFERRED')
+conn = sqlite3.connect('ResultsDataForces.db', isolation_level='DEFERRED')
 conn.execute('pragma journal_mode=wal')
-c=conn.cursor()
-
+c = conn.cursor()
 c.execute('''PRAGMA synchronous = OFF''')
 c.execute("BEGIN TRANSACTION")
 
@@ -27,16 +25,20 @@ Function to read Forces values from pch file
 and write them into database ResultsDataForces.db
 '''
 
+
 #Create Table for all element forces in the pch file
 def create_forces_table():
     c.execute('DROP TABLE IF EXISTS ElmForces')
-    c.execute('CREATE TABLE IF NOT EXISTS ElmForces(eid INTEGER, subcase INTEGER, Fx REAL, Fy REAL, Fz REAL,\
-                Mx REAL, My REAL, Mz REAL)')
+    c.execute('CREATE TABLE IF NOT EXISTS ElmForces(eid INTEGER, subcase INTEGER, \
+               Fx REAL, Fy REAL, Fz REAL,\
+               Mx REAL, My REAL, Mz REAL)')
+
 
 def forces_data_entry(eid, subcase, fx, fy, fz, mx, my, mz):
     c.execute("INSERT INTO ElmForces VALUES(?,?,?,?,?,?,?,?)",
               (eid, subcase, fx, fy, fz, mx, my, mz))
     conn.commit()
+
 
 #Function to determine number of subcases
 def nrCazuri():
@@ -130,13 +132,12 @@ def write_max_forces(group_name,index,a):
     #scrie in worksheetul de resultate, toate datele de forte pentru fiecare caz corespunzator grupului
     for j in range(len(data)):
         worksheet2.write(index+a, j+1, data[j]) 
- 
-    
-    statement2='SELECT eid,subcase,Fx,max(abs(Fy)),Fz,Mx,My,Mz\
+
+    statement2 = 'SELECT eid,subcase,Fx,max(abs(Fy)),Fz,Mx,My,Mz\
                FROM ElmForces\
                WHERE eid IN (SELECT eid FROM '+group_name+')'
     c.execute(statement2)
-    data2=c.fetchone()
+    data2 = c.fetchone()
     #scrie in worksheetul de resultate, toate datele de forte pentru fiecare caz corespunzator grupului
     for j in range(len(data2)):
         worksheet2.write(index+1+a, j+1, data2[j])  
@@ -195,7 +196,6 @@ def main():
         write_max_forces(group,j,a)
         a+=3
     workbook.close()
-
     
     c.close()
     conn.close()
