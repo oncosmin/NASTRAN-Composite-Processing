@@ -19,8 +19,8 @@ workbook = Workbook('ResultsForces.xlsx')
 worksheet1 = workbook.add_worksheet('Data_Forces')
 worksheet2 = workbook.add_worksheet('Summary_Forces')
 worksheet3 = workbook.add_worksheet('Data_MPC')
-worksheet5 = workbook.add_worksheet('Data_MPC_SUM')
 worksheet4 = workbook.add_worksheet('Summary_MPC')
+worksheet5 = workbook.add_worksheet('Data_MPC_SUM')
 worksheet6 = workbook.add_worksheet('Summary_MPC_Sum')
 
 '''
@@ -34,7 +34,12 @@ def create_forces_table():
     c.execute('DROP TABLE IF EXISTS ElmForces')
     c.execute('CREATE TABLE IF NOT EXISTS ElmForces(eid INTEGER, subcase INTEGER, \
                Fx REAL, Fy REAL, Fz REAL,\
-               Mx REAL, My REAL, Mz REAL)')
+               Mx REAL, My REAL, Mz REAL,axial TEXT)')
+
+#Create Table for elements with different Axial direction axis
+def create_axial_table():
+    c.execute('DROP TABLE IF EXISTS AxialDirection')
+    c.execute('CREATE TABLE IF NOT EXISTS AxialDirection(axial TEXT,eid INTEGER)')    
 
 #Create table for all MPC node forces extracted from pch file
 def create_mpc_forces_table():
@@ -50,9 +55,9 @@ def create_mpcSUM_forces_table():
                Mx REAL, My REAL, Mz REAL)') 
 
 #Insert cbush elm forces into ElmForces table
-def forces_data_entry(eid, subcase, fx, fy, fz, mx, my, mz):
-    c.execute("INSERT INTO ElmForces VALUES(?,?,?,?,?,?,?,?)",
-              (eid, subcase, fx, fy, fz, mx, my, mz))
+def forces_data_entry(eid, subcase, fx, fy, fz, mx, my, mz, axial):
+    c.execute("INSERT INTO ElmForces VALUES(?,?,?,?,?,?,?,?,?)",
+              (eid, subcase, fx, fy, fz, mx, my, mz, axial))
     conn.commit()
 
     
@@ -74,6 +79,14 @@ def nrCazuri():
     nrCaz=c.fetchone()
     return nrCaz
 
+def check_id(elemid):
+    c.execute('SELECT * FROM AxialDirection')
+    data=c.fetchall()
+    for line in data:
+        if line[1]==int(elemid):
+            return line[0]
+    return 'X'
+
 #Function to extract forces from pch file and write them into .db tables
 def parse_forces(fisier_input):
     # ATENTIE - modifica input file daca folosesti mai departe scrierea in db
@@ -92,11 +105,11 @@ def parse_forces(fisier_input):
                 elements=line.split()
                 if elements[0]!='-CONT-':
                     elmID=elements[0]
-                    count=2
                     fxyz=elements[1:4]
                 elif elements[0]=='-CONT-':
                     mxyz=elements[1:4]
-                    forces_data_entry(elmID,caz,fxyz[0],fxyz[1],fxyz[2],mxyz[0],mxyz[1],mxyz[2])
+                    value=check_id(elmID)
+                    forces_data_entry(elmID,caz,fxyz[0],fxyz[1],fxyz[2],mxyz[0],mxyz[1],mxyz[2],value)
                 else:
                     continue
             else:
@@ -181,15 +194,25 @@ def read_mpcSUM_groups():
                 conn.commit()
     return listaGrupuriMPCsum
 
+def read_axial_direction():
+    with open('Axial_Direction.txt','r') as file:
+        for line in file:
+            linie=line.split(',')
+            lista=process_input(str(linie[1]))
+            for i in lista:
+                statement='INSERT OR REPLACE INTO AxialDirection VALUES(?,?)'
+                c.execute(statement,(linie[0],i))
+                conn.commit()
+
 def write_forces (nume_group,coloana):
-    statement='SELECT eid,subcase,Fx,Fy,Fz,Mx,My,Mz\
+    statement='SELECT eid,subcase,Fx,Fy,Fz,Mx,My,Mz,axial\
                FROM ElmForces\
                WHERE eid IN (SELECT eid FROM '+nume_group+')'
     c.execute(statement)
     data=c.fetchall()
     #scrie header pentru rezultate
     worksheet1.write(0,coloana,nume_group)
-    header=['EID','Subcase','Fx[N]','Fy[N]','Fz[N]','Mx[Nm]','My[Nm]','Mz[Nm]']
+    header=['EID','Subcase','Fx[N]','Fy[N]','Fz[N]','Mx[Nm]','My[Nm]','Mz[Nm]','Axial Direction']
     for n,m in enumerate(header):
         worksheet1.write(1,n+coloana,m)
 
@@ -245,7 +268,7 @@ def write_max_forces(group_name,index,a):
     worksheet2.write(index+a+1,0,group_name)
     worksheet2.write(index+a+2,0,group_name)
     # select max(Fx)
-    statement1='SELECT eid,subcase,max(abs(Fx)),Fy,Fz,Mx,My,Mz\
+    statement1='SELECT eid,subcase,max(abs(Fx)),Fy,Fz,Mx,My,Mz,axial\
                FROM ElmForces\
                WHERE eid IN (SELECT eid FROM '+group_name+')'
     c.execute(statement1)
@@ -254,7 +277,7 @@ def write_max_forces(group_name,index,a):
     for j in range(len(data)):
         worksheet2.write(index+a, j+1, data[j]) 
 
-    statement2 = 'SELECT eid,subcase,Fx,max(abs(Fy)),Fz,Mx,My,Mz\
+    statement2 = 'SELECT eid,subcase,Fx,max(abs(Fy)),Fz,Mx,My,Mz,axial\
                FROM ElmForces\
                WHERE eid IN (SELECT eid FROM '+group_name+')'
     c.execute(statement2)
@@ -264,7 +287,7 @@ def write_max_forces(group_name,index,a):
         worksheet2.write(index+1+a, j+1, data2[j])  
  
 
-    statement3='SELECT eid,subcase,Fx,Fy,max(abs(Fz)),Mx,My,Mz\
+    statement3='SELECT eid,subcase,Fx,Fy,max(abs(Fz)),Mx,My,Mz,axial\
                FROM ElmForces\
                WHERE eid IN (SELECT eid FROM '+group_name+')'
     c.execute(statement3)
@@ -366,6 +389,9 @@ def main():
     '''
     #condition1=input('Do you want to extract cbush elm forces?(1=yes) :')
     #if condition1=='1':
+    create_axial_table()
+    read_axial_direction()
+    
     create_forces_table()
     try:
         parse_forces(input_fisier)
@@ -392,7 +418,7 @@ def main():
         col+=10
     print("--- %s seconds to write all forces data ---" % (time.time() - start_time))
 
-    header=['Group Name','EID','Subcase','Fx[N]','Fy[N]','Fz[N]','Mx[Nm]','My[Nm]','Mz[Nm]']
+    header=['Group Name','EID','Subcase','Fx[N]','Fy[N]','Fz[N]','Mx[Nm]','My[Nm]','Mz[Nm]','Axial Direction']
     for n,m in enumerate(header):
         worksheet2.write(0,n,m)
     a=1
@@ -409,6 +435,7 @@ def main():
     '''
     condition2=input('Do you want to write MPC nodes from MPC_Forces.txt ?(1=Yes) :')
     if condition2=='1':
+
         create_mpc_forces_table()
         try:
             parse_mpc_forces(input_fisier)
