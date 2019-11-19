@@ -228,7 +228,7 @@ def create_hc_table(case):
         c.execute(statement2,line)
         conn.commit()
 
-def create_hc_mos(caz,group_name):
+def create_hc_mos(caz,group_name,endCase):
     #create table with HC MOS based on calculation from input text allowables
     c.execute('CREATE TABLE IF NOT EXISTS HC_mos (eid INTEGER, pid INTEGER, shearXZ REAL,\
                shearYZ REAL, FsL REAL, FsW REAL, Subcase INTEGER,fos_hc REAL, MOS REAL)')
@@ -238,16 +238,27 @@ def create_hc_mos(caz,group_name):
 
     statement3='SELECT * FROM HC_stress\
                 WHERE eid IN (SELECT eid FROM '+group_name+')\
-                AND Subcase = ?'
+                AND Subcase IN (?,?)'
     
-    c.execute(statement3,(caz,))
+    c.execute(statement3,(caz,endCase))
     dataHC_mos = c.fetchall()
     statement4='INSERT OR REPLACE INTO HC_mos VALUES(?,?,?,?,?,?,?,?,?)'
-    for line2 in dataHC_mos:
-        c.execute(statement4,line2+fosuHC+((1/(fosuHC[0]*sqrt((line2[2]/line2[4])**2+(line2[3]/line2[5])**2)))-1,))
+    n=int(len(dataHC_mos)/2)
+
+    for x in range(n):
+        print(dataHC_mos[x])
+        c.execute(statement4,dataHC_mos[x]+fosuHC+((1/(sqrt((line2[2]/line2[4])**2+(line2[3]/line2[5])**2)))-1,))
         conn.commit()
         
-        
+#
+#
+#
+#
+#
+#
+#
+#
+#
 
 # Functie pentru scrierea rezultatelor de la HC MOS pentru toate cazurile, pentru fiecare group de elm
 def write_all_hc_mos(nume_group,coloana,index):
@@ -569,9 +580,9 @@ def main():
         c.execute('CREATE INDEX index_hc ON HC_stress(eid,Subcase)')
         c.execute('DROP TABLE IF EXISTS HC_mos')
         for groups in groupNames:
-            for k in range(nr_cazuri[0]):
+            for k in range(nr_cazuri[0]-1):
                 # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
-                create_hc_mos(k+1,groups)
+                create_hc_mos(k+1,groups,nr_cazuri[0])
         print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time))
 
     elif condition2 == '2':
