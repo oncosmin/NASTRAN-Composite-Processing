@@ -231,7 +231,8 @@ def create_hc_table(case):
 def create_hc_mos(caz,group_name,endCase):
     #create table with HC MOS based on calculation from input text allowables
     c.execute('CREATE TABLE IF NOT EXISTS HC_mos (eid INTEGER, pid INTEGER, shearXZ REAL,\
-               shearYZ REAL, FsL REAL, FsW REAL, Subcase INTEGER,fos_hc REAL, MOS REAL)')
+               shearYZ REAL,shearXZtemp REAL, shearYZtemp REAL, FsL REAL, FsW REAL,\
+               Subcase INTEGER,fos_hc REAL, MOS REAL)')
     
     c.execute('SELECT fos_hc FROM {}'.format(group_name))
     fosuHC=c.fetchone()
@@ -239,26 +240,24 @@ def create_hc_mos(caz,group_name,endCase):
     statement3='SELECT * FROM HC_stress\
                 WHERE eid IN (SELECT eid FROM '+group_name+')\
                 AND Subcase IN (?,?)'
-    
+
     c.execute(statement3,(caz,endCase))
     dataHC_mos = c.fetchall()
-    statement4='INSERT OR REPLACE INTO HC_mos VALUES(?,?,?,?,?,?,?,?,?)'
-    n=int(len(dataHC_mos)/2)
+    statement4='INSERT OR REPLACE INTO HC_mos VALUES(?,?,?,?,?,?,?,?,?,?,?)'
+    n=int(len(dataHC_mos))
 
-    for x in range(n):
-        print(dataHC_mos[x])
-        c.execute(statement4,dataHC_mos[x]+fosuHC+((1/(sqrt((line2[2]/line2[4])**2+(line2[3]/line2[5])**2)))-1,))
+    for x in range(0,n-1,2):
+        #print(dataHC_mos[x+1][3])
+        #print(dataHC_mos[x][3]+dataHC_mos[x+1][3])
+        c.execute(statement4,(dataHC_mos[x][0],dataHC_mos[x][1],\
+                   dataHC_mos[x][2],dataHC_mos[x][3],\
+                   dataHC_mos[x+1][2],dataHC_mos[x+1][3],\
+                   dataHC_mos[x][4],dataHC_mos[x][5],\
+                   dataHC_mos[x][6])\
+                  +fosuHC\
+                  +(1/(sqrt(((fosuHC[0]*dataHC_mos[x][2]+dataHC_mos[x+1][2])/dataHC_mos[x][4])**2\
+                             +((fosuHC[0]*dataHC_mos[x][3]+dataHC_mos[x+1][3])/dataHC_mos[x][5])**2))-1,))
         conn.commit()
-        
-#
-#
-#
-#
-#
-#
-#
-#
-#
 
 # Functie pentru scrierea rezultatelor de la HC MOS pentru toate cazurile, pentru fiecare group de elm
 def write_all_hc_mos(nume_group,coloana,index):
@@ -269,7 +268,7 @@ def write_all_hc_mos(nume_group,coloana,index):
            index - index for case number
     OUTPUT: write in Data_Results_HC worksheet, worksheet3
     '''
-    statement3='SELECT eid,pid,shearXZ,shearYZ,FsL,FsW,Subcase,fos_hc,min(MOS)\
+    statement3='SELECT eid,pid,shearXZ,shearYZ,shearXZtemp,shearYZtemp,FsL,FsW,Subcase,fos_hc,min(MOS)\
                FROM HC_mos\
                WHERE eid IN (SELECT eid FROM '+nume_group+' )\
                AND eid NOT IN (SELECT eid FROM ElementeEliminate)\
@@ -280,7 +279,8 @@ def write_all_hc_mos(nume_group,coloana,index):
 
     #scrie header pentru rezultate
     worksheet3.write(0,coloana,nume_group)
-    header=['EID','PID','Shear XZ[Pa]','Shear YZ[Pa]','FsL[Pa]','FsW[Pa]','Subcase','FOS HC','MOS HC']
+    header=['EID','PID','Shear XZ[Pa]','Shear YZ[Pa]','Shear XZ Temp[Pa]',\
+            'Shear YZ Temp[Pa]','FsL[Pa]','FsW[Pa]','Subcase','FOS HC','MOS HC']
     for n,m in enumerate(header):
         worksheet3.write(1,n+coloana,m)
 
@@ -295,7 +295,7 @@ def write_all_hc_mos(nume_group,coloana,index):
 
 # Functie pentru scrierea valorilor minime ale MOS pentru HC pentru fiecare Group de elem
 def write_min_hc_mos(nume_group,rows):
-    statement4='SELECT eid,pid,shearXZ,shearYZ,FsL,FsW,Subcase,fos_hc,min(MOS)\
+    statement4='SELECT eid,pid,shearXZ,shearYZ,shearXZtemp,shearYZtemp,FsL,FsW,Subcase,fos_hc,min(MOS)\
                FROM HC_mos\
                WHERE eid IN (SELECT eid FROM '+nume_group+' )\
                AND eid NOT IN (SELECT eid FROM ElementeEliminate)'
@@ -305,7 +305,8 @@ def write_min_hc_mos(nume_group,rows):
     data=c.fetchall()
 
     #scrie Headerul pentru tabelul de rezultate calculate
-    header=['Group Name','EID','PID','Shear XZ[Pa]','Shear YZ[Pa]','FsL[Pa]','FsW[Pa]','Subcase','FOS HC','MOS HC']
+    header=['Group Name','EID','PID','Shear XZ[Pa]','Shear YZ[Pa]','Shear XZ Temp[Pa]',\
+            'Shear YZ Temp[Pa]','FsL[Pa]','FsW[Pa]','Subcase','FOS HC','MOS HC']
     for n,m in enumerate(header):
         worksheet4.write(0,n,m)
 
@@ -461,7 +462,7 @@ def main():
 	- Use GroupHCproperties.txt as input for HC properties
 	- Use GroupMetalic.txt as input for metalic part groups
 	- Use MetalicProperties.txt as input for metalic properties
-	- Implemented FOS into input text, no user input requested
+	- Implemen1ted FOS into input text, no user input requested
 
         Workflow:
         - Insert name of .f06 file with extension included
@@ -510,7 +511,7 @@ def main():
 
 
     '''---------------------------------------------------------------------
-    Create tables with group names and specific EID, based on GroupOuput.txt
+    Create tables 1with group names and specific EID, based on GroupOuput.txt
     and GroupMetalic.txt
     - if tables exist, they will be deleted and written again
     ----------------------------------------------------------------------'''
@@ -580,7 +581,7 @@ def main():
         c.execute('CREATE INDEX index_hc ON HC_stress(eid,Subcase)')
         c.execute('DROP TABLE IF EXISTS HC_mos')
         for groups in groupNames:
-            for k in range(nr_cazuri[0]-1):
+            for k in range(0,nr_cazuri[0]-1):
                 # cazul de input trebuie sa porneasca de la 1 pentru statement de SELECT
                 create_hc_mos(k+1,groups,nr_cazuri[0])
         print("--- %s seconds to create HC MOS table in database ---" % (time.time() - start_time))
@@ -633,12 +634,12 @@ def main():
         c.execute('CREATE INDEX vm_mos ON ElmVM_MOS(eid,Subcase)')        
         # Write results from ElmSR_MOS table in db to excel
         for group in groupNames:
-            for i in range(nr_cazuri[0]):
+            for i in range(nr_cazuri[0]-1):
                 write_sr(group,rows,col_sr,i+1)
                 write_all_hc_mos(group,col_stress,i+1)
             write_min_hc_mos(group,rows)
             col_sr+=7
-            col_stress+=10
+            col_stress+=12
             rows+=1
         for groupM in groupNamesMetal:
             for j in range(nr_cazuri[0]):
