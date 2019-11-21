@@ -143,11 +143,12 @@ In table ElmVMstress
 
 
 def create_vm_table():
-    c.execute('CREATE TABLE IF NOT EXISTS ElmVMstress(eid INTEGER, vm_stress REAL, layer TEXT, subcase INTEGER)')
+    c.execute('CREATE TABLE IF NOT EXISTS ElmVMstress(eid INTEGER, sig1 REAL, sig2 REAL, sig3 REAL,\
+                 sig12 REAL, sig23 REAL, sig31 REAL, sigVM REAL, layer TEXT, subcase INTEGER)')
 
-def vm_stress_data_entry(eid, vm_stress, layer, subcase):
-    c.execute("INSERT INTO ElmVMstress VALUES(?, ?, ?, ?)",
-              (eid, vm_stress, layer, subcase))
+def vm_stress_data_entry(eid,sig1,sig2,sig3,sig12,sig23,sig31,vm_stress,layer,subcase):
+    c.execute("INSERT INTO ElmVMstress VALUES(?,?,?,?,?,?,?,?,?,?)",
+              (eid,sig1,sig2,sig3,sig12,sig23,sig31,vm_stress,layer,subcase))
     conn.commit()
 
 # Functie de extragere a Von Mises stress din elemente QUAD si TRIA omogene, materiale metalice
@@ -170,17 +171,25 @@ def parse_vm_stress2(fisier_input):
             if parse:
                 count+=1 #determin linia la care sunt
                 elements=line.split()
+                match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
+                elm=re.findall(match_number,line)
                 if elements[0]!='-CONT-':
                     elmID=elements[0]
                     count=2
+                    sig1_z1=elm[1]
+                    sig2_z1=elm[2]
+                elif elements[0]=='-CONT-' and count==3:
+                    sig12_z1=elm[0]
                 elif elements[0]=='-CONT-' and count==4:
                     vm_z1=elements[2]
+                elif elements[0]=='-CONT-' and count==5:
+                    sig1_z2=elm[0]
+                    sig2_z2=elm[1]
+                    sig12_z2=elm[2]
                 elif elements[0]=='-CONT-' and count==7:
                     vm_z2=elements[1]
-                    if float(vm_z1)>float(vm_z2):
-                        vm_stress_data_entry(elmID,vm_z1,'Z1',caz)
-                    else:
-                        vm_stress_data_entry(elmID,vm_z2,'Z2',caz)
+                    vm_stress_data_entry(elmID,sig1_z1,sig2_z1,0,sig12_z1,0,0,vm_z1,'Z1',caz)
+                    vm_stress_data_entry(elmID,sig1_z2,sig2_z2,0,sig12_z2,0,0,vm_z2,'Z2',caz)
                 else:
                     continue
             else:
@@ -208,16 +217,25 @@ def parse_vm_solid_stress2(fisier_input):
             if parse:
                 count+=1 #determin linia la care sunt
                 elements=line.split() #split componente linie
+                #folosim regex pentru a identifica nr real atunci cand id de linie
+                # din pch devine prea mare si se leaga de elements[3]
+                match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
+                elm=re.findall(match_number,line)
                 if elements[0]!='-CONT-':
                     elmID=elements[0]
                     count=2
+                elif elements[0]=='-CONT-' and count==3:
+                    sig1_s=elm[1]
+                    sig12_s=elm[2]
                 elif elements[0]=='-CONT-' and count==5:
-                    #folosim regex pentru a identifica nr real atunci cand id de linie
-                    # din pch devine prea mare si se leaga de elements[3]
-                    match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
-                    elm=re.findall(match_number,line)
                     vm_solid=elm[2] #al 3 lea element din linie deoarece nu citeste CONT
-                    vm_stress_data_entry(elmID,vm_solid,'Solid',caz)
+                elif elements[0]=='-CONT-' and count==6:
+                    sig2_s=elm[0]
+                    sig23_s=elm[1]
+                elif elements[0]=='-CONT-' and count==8:
+                    sig3_s=elm[0]
+                    sig31_s=elm[1]
+                    vm_stress_data_entry(elmID,sig1_s,sig2_s,sig3_s,sig12_s,sig23_s,sig31_s,vm_solid,'Solid',caz)
                 else:
                     continue
             else:
@@ -238,3 +256,7 @@ def vm_stress_to_database(fisier_in):
 
 ##test input
 #vm_stress_to_database('01_re-entry_load_case.pch')
+##c.execute('DROP TABLE IF EXISTS ElmVMStress')
+##create_vm_table()
+#parse_vm_stress2('01_landing_load_case_13112019.pch')
+#parse_vm_solid_stress2('01_landing_load_case_13112019.pch')
