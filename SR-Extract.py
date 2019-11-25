@@ -533,7 +533,7 @@ def main():
     ==================================================================
                  Space Rider Cold Structure Data Analysis
     ==================================================================
-                            - Version 2.13 -
+                      - Version 2.13-2 TEMP FEATURE -
 	
 	Added functions:
 	- Read .f06 for strength ratio
@@ -544,6 +544,7 @@ def main():
 	- Use GroupMetalic.txt as input for metalic part groups
 	- Use MetalicProperties.txt as input for metalic properties
 	- Implemen1ted FOS into input text, no user input requested
+	- Mechanical Loads combined with TEMP Loads by different FOS
 
         Workflow:
         - Insert name of .f06 file with extension included
