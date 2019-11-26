@@ -173,7 +173,7 @@ def parse_vm_stress2(fisier_input):
                 elements=line.split()
                 match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
                 elm=re.findall(match_number,line)
-                if elements[0]!='-CONT-':
+                if elements[0]!='-CONT-' and elements[0]!='$ELEMENT':
                     elmID=elements[0]
                     count=2
                     sig1_z1=elm[1]
@@ -221,7 +221,7 @@ def parse_vm_solid_stress2(fisier_input):
                 # din pch devine prea mare si se leaga de elements[3]
                 match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
                 elm=re.findall(match_number,line)
-                if elements[0]!='-CONT-':
+                if elements[0]!='-CONT-' and elements[0]!='$ELEMENT':
                     elmID=elements[0]
                     count=2
                 elif elements[0]=='-CONT-' and count==3:
@@ -253,6 +253,8 @@ def vm_stress_to_database(fisier_in):
     parse_vm_solid_stress2(fisier_in)
     c.close()
     conn.close()
+
+vm_stress_to_database('01_main_parachute_opening_load_case_12112019.pch')
 
 ##test input
 #vm_stress_to_database('01_re-entry_load_case.pch')
