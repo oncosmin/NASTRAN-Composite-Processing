@@ -254,8 +254,6 @@ def vm_stress_to_database(fisier_in):
     c.close()
     conn.close()
 
-vm_stress_to_database('01_main_parachute_opening_load_case_12112019.pch')
-
 ##test input
 #vm_stress_to_database('01_re-entry_load_case.pch')
 ##c.execute('DROP TABLE IF EXISTS ElmVMStress')
