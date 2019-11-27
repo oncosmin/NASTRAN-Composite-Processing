@@ -353,8 +353,8 @@ def create_table_vm(index):
 
 
 def formula_vmMOS_shell(s1m,s2m,s12m,s1t,s2t,s12t,fos,s_allow):
-    return s_allow/sqrt(abs(((fos**(2/3)*s1m+s1t)**3+(fos**(2/3)*s2m+s2t)**3)/(s1m+s2m+s1t+s2t)\
-                        +3*(fos*s12m+s12t)**2.))-1
+    return s_allow/sqrt(abs((fos*s1m+s1t)**2-(fos*s1m+s1t)*(fos*s2m+s2t)+(fos*s2m+s2t)**2+\
+                            3*(fos*s12m+s12t)**2.))-1
 
 def formula_vmMOS_solid(s1m,s2m,s3m,s12m,s23m,s31m,s1t,s2t,s3t,s12t,s23t,s31t,fos,s_allow):
     return s_allow/sqrt(0.5*((fos*(s1m-s2m)+s1t-s2t)**2+\
@@ -533,7 +533,7 @@ def main():
     ==================================================================
                  Space Rider Cold Structure Data Analysis
     ==================================================================
-                      - Version 2.13-2 TEMP FEATURE -
+                      - Version 2.13-4 TEMP FEATURE -
 	
 	Added functions:
 	- Read .f06 for strength ratio
