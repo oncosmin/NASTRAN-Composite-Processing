@@ -25,9 +25,9 @@ def create_solid_table():
     c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, sig1 REAL, sig2 REAL, sig12 REAL,\
                shearXZ REAL, shearYZ REAL, subcase INTEGER)')
 
-def solid_stress_data_entry(eid, pid, ShearXZ, ShearYZ, subcase):
+def solid_stress_data_entry(eid, pid, sig1, sig2, sig12, ShearXZ, ShearYZ, subcase):
     c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
-              (eid,pid,ShearXZ,ShearYZ,subcase))
+              (eid,pid,sig1,sig2,sig12,ShearXZ,ShearYZ,subcase))
     conn.commit()
 
 def parse_solid_stress(fisier_input):
