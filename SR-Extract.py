@@ -45,7 +45,8 @@ def create_table_sr(group_name,index):
                WHERE eid IN (SELECT eid FROM '+group_name+' )\
                AND eid NOT IN (SELECT eid FROM ElementeEliminate)\
                AND subcase = ?'
-    #selecteaza randul cu min(SR) pentru grupul de elemente  
+    #selecteaza randul cu min(SR) pentru grupul de elemente
+    
     c.execute(statement,(index,))
     data=c.fetchall()
     c.execute('SELECT fos_sr FROM {}'.format(group_name))
@@ -419,6 +420,22 @@ def write_min_vm_mos(nume_group,rows):
             else:
                 worksheet6.write(rows, col+1, val)
 
+def calculate_plane_von_mises(sig1,sig2,sig12):
+    return sqrt(sig1**2.0-sig1*sig2+sig2**2.0+3*sig12**2.0)
+
+def update_elm_vm_stress():
+    statement = 'SELECT eid,pid,sig1,sig2,sig12,subcase\
+                 FROM ElmStress\
+                 WHERE pid IN (1,3)'
+    c.execute(statement)
+    data=c.fetchall()
+
+    for line in data:
+        statement2='INSERT OR REPLACE INTO ElmVMstress VALUES(?, ?, ?, ?)'
+        c.execute(statement2,(line[0],calculate_plane_von_mises(line[2],line[3],line[4]),\
+                              line[1],line[5]))
+        conn.commit()
+
 
 def main():
     start_time = time.time()
@@ -440,7 +457,7 @@ def main():
     ==================================================================
                  Space Rider Cold Structure Data Analysis
     ==================================================================
-                            - Version 2.13 -
+                            - Version 2.14 -
 	
 	Added functions:
 	- Read .f06 for strength ratio
@@ -451,6 +468,7 @@ def main():
 	- Use GroupMetalic.txt as input for metalic part groups
 	- Use MetalicProperties.txt as input for metalic properties
 	- Implemented FOS into input text, no user input requested
+	- Calculate composite metalliv facing Von Mises
 
         Workflow:
         - Insert name of .f06 file with extension included
@@ -493,6 +511,10 @@ def main():
         #introducerea rezultatelor pentru stress VonMises ale elm din material metalic
         vm_stress_to_database(pch_fisier)
         print("--- %s seconds to Von Mises Stress extraction ---" % (time.time() - start_time))
+
+        #update ElmVMstress database to add metalic AL skin values from layered composite QUAD and TRIA
+        update_elm_vm_stress()
+        print("--- %s seconds to Von Mises Stress update ---" % (time.time() - start_time))
         
     else:
         pass
@@ -655,4 +677,3 @@ def main():
 
 
 main()
-    

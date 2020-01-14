@@ -22,11 +22,12 @@ c.execute('''PRAGMA synchronous = OFF''')
 c.execute("BEGIN TRANSACTION")
 
 def create_solid_table():
-    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, shearXZ REAL, shearYZ REAL, subcase INTEGER)')
+    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, sig1 REAL, sig2 REAL, sig12 REAL,\
+               shearXZ REAL, shearYZ REAL, subcase INTEGER)')
 
-def solid_stress_data_entry(eid, pid, ShearXZ, ShearYZ, subcase):
-    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?)",
-              (eid,pid,ShearXZ,ShearYZ,subcase))
+def solid_stress_data_entry(eid, pid, sig1, sig2, sig12, ShearXZ, ShearYZ, subcase):
+    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+              (eid,pid,sig1,sig2,sig12,ShearXZ,ShearYZ,subcase))
     conn.commit()
 
 def parse_solid_stress(fisier_input):
@@ -53,7 +54,7 @@ def parse_solid_stress(fisier_input):
                     shearYZ=elements[2]
                 elif elements[0]=='-CONT-' and count==8:
                     shearXZ=elements[2]
-                    solid_stress_data_entry(elmID,0,shearXZ,shearYZ,caz)
+                    solid_stress_data_entry(elmID,0,0,0,0,shearXZ,shearYZ,caz)
                 else:
                     continue
             else:

@@ -118,11 +118,11 @@ In table ElmStress
 '''
 
 def create_table():
-    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, shearXZ REAL, shearYZ REAL, subcase INTEGER)')
+    c.execute('CREATE TABLE IF NOT EXISTS ElmStress(eid INTEGER, pid INTEGER, sig1 REAL, sig2 REAL, sig12 REAL,shearXZ REAL, shearYZ REAL, subcase INTEGER)')
 
-def stress_data_entry(eid, pid, shearXZ, shearYZ, subcase):
-    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?)",
-              (eid, pid, shearXZ, shearYZ, subcase))
+def stress_data_entry(eid, pid, sig1, sig2, sig12, shearXZ, shearYZ, subcase):
+    c.execute("INSERT INTO ElmStress VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+              (eid, pid, sig1, sig2, sig12, shearXZ, shearYZ, subcase))
     conn.commit()
 
 
@@ -145,18 +145,21 @@ def parse_stress3(fisier_input):
             if parse:
                 count+=1 #determin linia la care sunt
                 elements=line.split()
-                if elements[0]!='-CONT-':
+                #folosim regex pentru a identifica nr real atunci cand id de linie
+                # din pch devine prea mare si se leaga de elements[3]
+                match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
+                elm=re.findall(match_number,line)
+                if elements[0]!='-CONT-' and len(elm)>=4:
                     elmID=elements[0]
                     plyID=elements[1]
+                    sig1=elm[2]
+                    sig2=elm[3]
                     count=2
                 elif elements[0]=='-CONT-' and count==3:
-                    #folosim regex pentru a identifica nr real atunci cand id de linie
-                    # din pch devine prea mare si se leaga de elements[3]
-                    match_number=re.compile("[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?.\d{1})?")
-                    elm=re.findall(match_number,line)
+                    sig12=elm[0]
                     shearYZ=elm[2]
                     shearXZ=elements[2]
-                    stress_data_entry(elmID,plyID,shearXZ,shearYZ,caz)
+                    stress_data_entry(elmID,plyID,sig1,sig2,sig12,shearXZ,shearYZ,caz)
                 else:
                     continue
             else:
@@ -172,4 +175,3 @@ def stress_to_database(fisier_in):
     parse_stress3(fisier_in)
     c.close()
     conn.close()
-
