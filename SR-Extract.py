@@ -4,9 +4,9 @@ from sr_extract_sr import sr_to_database
 from sr_extract_vm import vm_stress_to_database
 from sr_extract_solid import solid_stress_to_database
 from patran_input import process_input
-import time
 from xlsxwriter.workbook import Workbook
 from math import sqrt
+import time
 
 # Creare fisier excel pentru scrierea rezultatelor
 workbook = Workbook('ResultsSR.xlsx')

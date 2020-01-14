@@ -198,6 +198,7 @@ def write_forces (nume_group,coloana):
         for x in range(len(row)):
            worksheet1.write(i+2, x+coloana, row[x]) 
         
+
 # function for writing mpc forces to excel based on groups
 def write_mpc_forces(nume_group,coloana):
     statement='SELECT nid,subcase,Fx,Fy,Fz,Mx,My,Mz\
