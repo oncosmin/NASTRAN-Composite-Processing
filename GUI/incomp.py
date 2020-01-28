@@ -297,7 +297,6 @@ class Ui_MainWindow(object):
         self.browse_view_pch.setGeometry(QtCore.QRect(70, 100, 521, 31))
         self.browse_view_pch.setObjectName("browse_view_pch")
 
-
         """
         Central Widget Main Window
         """
