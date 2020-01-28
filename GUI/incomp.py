@@ -301,21 +301,53 @@ class Ui_MainWindow(object):
         """
         Central Widget Main Window
         """
-        
+
+        #########################
+        #Menu Bar (File, About)
+
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 818, 21))
         self.menubar.setObjectName("menubar")
         self.menuFile = QtWidgets.QMenu(self.menubar)
         self.menuFile.setObjectName("menuFile")
-        self.menuAbout = QtWidgets.QMenu(self.menubar)
-        self.menuAbout.setObjectName("menuAbout")
+
+        #Create New Sub-Menu, clear database
+        newButton = self.menuFile.addAction('New')
+        newButton.setShortcut('Ctrl+N')
+        
+        #Create Exit Sub-menu for the FILE menubar
+        exitButton = self.menuFile.addAction('Exit')
+        exitButton.setShortcut('Ctrl+Q')
+        # Check int=main, window=w, this is what needs to be closed
+        exitButton.triggered.connect(w.close)
+
+
+        # Help - About - message box when button triggered
+        def about_popup():
+            msg = QtWidgets.QMessageBox()
+            msg.setWindowTitle('Info')
+            msg.setText('This program is property of o\\')
+            msg.setStandardButtons(msg.Ok)
+            msg.exec_()
+            
+        self.menuHelp = QtWidgets.QMenu(self.menubar)
+        self.menuHelp.setObjectName("menuHelp")
+        aboutButton = self.menuHelp.addAction('About')
+        aboutButton.triggered.connect(lambda: about_popup())
+            
+        # Status Bar Definition, File and Help menus        
         MainWindow.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(MainWindow)
         self.statusbar.setObjectName("statusbar")
         MainWindow.setStatusBar(self.statusbar)
         self.menubar.addAction(self.menuFile.menuAction())
-        self.menubar.addAction(self.menuAbout.menuAction())
+        self.menubar.addAction(self.menuHelp.menuAction())
+
+        
+        #End Menu Definition
+        #########################
+
 
         self.retranslateUi(MainWindow)
         self.materialWidget.setCurrentIndex(0)
@@ -435,7 +467,10 @@ class Ui_MainWindow(object):
         self.label_f06.setText(_translate("MainWindow", "F06"))
         self.label_pch.setText(_translate("MainWindow", "PCH"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
-        self.menuAbout.setTitle(_translate("MainWindow", "About"))
+        self.menuHelp.setTitle(_translate("MainWindow", "Help"))
+
+
+
 
 if __name__ == '__main__':
     import sys
