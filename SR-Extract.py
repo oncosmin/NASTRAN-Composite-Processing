@@ -353,8 +353,8 @@ def create_table_vm(index):
 
 
 def formula_vmMOS_shell(s1m,s2m,s12m,s1t,s2t,s12t,fos,s_allow):
-    return s_allow/sqrt(abs((fos*s1m+s1t)**2-(fos*s1m+s1t)*(fos*s2m+s2t)+(fos*s2m+s2t)**2+\
-                            3*(fos*s12m+s12t)**2.))-1
+    return s_allow/sqrt(abs((fos*s1m+1.1*s1t)**2-(fos*s1m+1.1*s1t)*(fos*s2m+1.1*s2t)+(fos*s2m+1.1*s2t)**2+\
+                            3*(fos*s12m+1.1*s12t)**2.))-1
 
 def formula_vmMOS_solid(s1m,s2m,s3m,s12m,s23m,s31m,s1t,s2t,s3t,s12t,s23t,s31t,fos,s_allow):
     return s_allow/sqrt(0.5*((fos*(s1m-s2m)+s1t-s2t)**2+\
@@ -619,7 +619,12 @@ def main():
 
 
     # Number of cases based on disctinct subcases present in ElmStrengthRatio Table
-    nr_cazuri=nrCazuri()
+    try:
+        nr_cazuri=nrCazuri()
+    except sqlite3.OperationalError:
+        caz_str=input('Specify number of cases=')
+        nr_cazuri=[int(caz_str)]
+        
     print ('Number of cases',nr_cazuri[0])
 
 
@@ -709,21 +714,34 @@ def main():
         col_stress=0
         col_vm=0
         #Index for MOS tables for faster query and writing
-        c.execute('DROP INDEX IF EXISTS sr_mos')
-        c.execute('CREATE INDEX sr_mos ON ElmSR_MOS(eid,Subcase)')
-        c.execute('DROP INDEX IF EXISTS idx_hc_mos')
-        c.execute('CREATE INDEX idx_hc_mos ON HC_mos(eid,Subcase)')
-        c.execute('DROP INDEX IF EXISTS vm_mos')
-        c.execute('CREATE INDEX vm_mos ON ElmVM_MOS(eid,Subcase)')       
+        try:
+            c.execute('DROP INDEX IF EXISTS sr_mos')
+            c.execute('CREATE INDEX sr_mos ON ElmSR_MOS(eid,Subcase)')
+        except sqlite3.OperationalError:
+            pass
+        try:
+            c.execute('DROP INDEX IF EXISTS idx_hc_mos')
+            c.execute('CREATE INDEX idx_hc_mos ON HC_mos(eid,Subcase)')
+        except sqlite3.OperationalError:
+            pass
+        try:
+            c.execute('DROP INDEX IF EXISTS vm_mos')
+            c.execute('CREATE INDEX vm_mos ON ElmVM_MOS(eid,Subcase)')       
+        except sqlite3.OperationalError:
+            pass
         # Write results from ElmSR_MOS table in db to excel
-        for group in groupNames:
-            for i in range(nr_cazuri[0]-1):
-                write_sr(group,rows,col_sr,i+1)
-                write_all_hc_mos(group,col_stress,i+1)
-            write_min_hc_mos(group,rows)
-            col_sr+=7
-            col_stress+=12
-            rows+=1
+        try:            
+            for group in groupNames:
+                for i in range(nr_cazuri[0]-1):
+                    write_sr(group,rows,col_sr,i+1)
+                    write_all_hc_mos(group,col_stress,i+1)
+                write_min_hc_mos(group,rows)
+                col_sr+=7
+                col_stress+=12
+                rows+=1
+        except sqlite3.OperationalError:
+            pass
+        
         for groupM in groupNamesMetal:
             for j in range(nr_cazuri[0]):
                 write_all_vm_mos(groupM,col_vm,j+1)
