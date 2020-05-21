@@ -176,8 +176,8 @@ def parse_vm_stress2(fisier_input):
                 if elements[0]!='-CONT-' and elements[0]!='$ELEMENT':
                     elmID=elements[0]
                     count=2
-                    sig1_z1=elm[1]
-                    sig2_z1=elm[2]
+                    sig1_z1=elm[2]
+                    sig2_z1=elm[3]
                 elif elements[0]=='-CONT-' and count==3:
                     sig12_z1=elm[0]
                 elif elements[0]=='-CONT-' and count==4:
@@ -255,7 +255,7 @@ def vm_stress_to_database(fisier_in):
     conn.close()
 
 ##test input
-#vm_stress_to_database('01_re-entry_load_case.pch')
+#vm_stress_to_database('testtempstress.pch')
 ##c.execute('DROP TABLE IF EXISTS ElmVMStress')
 ##create_vm_table()
 #parse_vm_stress2('01_landing_load_case_13112019.pch')
