@@ -741,13 +741,17 @@ def main():
                 rows+=1
         except sqlite3.OperationalError:
             pass
+
+        try: 
+            for groupM in groupNamesMetal:
+                for j in range(nr_cazuri[0]):
+                    write_all_vm_mos(groupM,col_vm,j+1)
+                write_min_vm_mos(groupM,rows_vm)
+                col_vm+=24
+                rows_vm+=1
+        except sqlite3.OperationalError:
+            pass
         
-        for groupM in groupNamesMetal:
-            for j in range(nr_cazuri[0]):
-                write_all_vm_mos(groupM,col_vm,j+1)
-            write_min_vm_mos(groupM,rows_vm)
-            col_vm+=24
-            rows_vm+=1
         workbook.close()
         print("--- %s seconds to write excel file with SR and HC MOS results ---" % (time.time() - start_time))
     elif condition3 == '2':
