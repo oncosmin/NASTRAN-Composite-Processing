@@ -1,6 +1,8 @@
 # ignore test folder
 test/
 __pycache__/
+INPUT/
+EXE/
 
 # ignore results database
 *.db
