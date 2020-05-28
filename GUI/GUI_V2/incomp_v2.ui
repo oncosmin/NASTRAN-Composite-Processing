@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>797</width>
+    <width>826</width>
     <height>651</height>
    </rect>
   </property>
@@ -15,7 +15,13 @@
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(99, 99, 99);
-color: rgb(0, 255, 29);</string>
+font: 75 10pt &quot;DejaVu Sans&quot;;
+
+color: rgb(0, 255, 29);
+color: rgb(255, 255, 255);
+
+
+</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -47,27 +53,50 @@ color: rgb(0, 255, 29);</string>
       </property>
       <item row="0" column="0">
        <widget class="QPushButton" name="pushButton_2">
-        <property name="text">
-         <string>PushButton</string>
+        <property name="enabled">
+         <bool>true</bool>
         </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
-       <widget class="QPushButton" name="pushButton_3">
-        <property name="text">
-         <string>PushButton</string>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Maximum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
         </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QPushButton" name="pushButton_4">
+        <property name="minimumSize">
+         <size>
+          <width>110</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton
+{
+    border-image: url(:/buttons/untitled2.png);
+}
+QPushButton::pressed
+{
+    border-image: url(:/buttons/untitled.png);
+}</string>
+        </property>
         <property name="text">
-         <string>PushButton</string>
+         <string>Browse BDF</string>
+        </property>
+        <property name="iconSize">
+         <size>
+          <width>20</width>
+          <height>20</height>
+         </size>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
        <widget class="QLineEdit" name="lineEdit">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">border: 1px solid black;
 height: 20px;
@@ -79,8 +108,43 @@ height: 20px;
         </property>
        </widget>
       </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="pushButton_3">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>110</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton
+{
+    border-image: url(:/buttons/untitled2.png);
+}
+QPushButton::pressed
+{
+    border-image: url(:/buttons/untitled.png);
+}</string>
+        </property>
+        <property name="text">
+         <string>Browse F06</string>
+        </property>
+       </widget>
+      </item>
       <item row="1" column="1">
        <widget class="QLineEdit" name="lineEdit_2">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">border: 1px solid black;
 height: 20px;
@@ -88,8 +152,37 @@ height: 20px;
         </property>
        </widget>
       </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="pushButton_4">
+        <property name="minimumSize">
+         <size>
+          <width>110</width>
+          <height>30</height>
+         </size>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">QPushButton
+{
+    border-image: url(:/buttons/untitled2.png);
+}
+QPushButton::pressed
+{
+    border-image: url(:/buttons/untitled.png);
+}</string>
+        </property>
+        <property name="text">
+         <string>Browse PCH</string>
+        </property>
+       </widget>
+      </item>
       <item row="2" column="1">
        <widget class="QLineEdit" name="lineEdit_3">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>30</height>
+         </size>
+        </property>
         <property name="styleSheet">
          <string notr="true">border: 1px solid black;
 height: 20px;</string>
@@ -224,27 +317,70 @@ QTabBar::tab:left:only-one, QTabBar::tab:right:only-one {
       <property name="tabBarAutoHide">
        <bool>true</bool>
       </property>
-      <widget class="QWidget" name="tab_5">
+      <widget class="QWidget" name="tab_1">
        <attribute name="title">
-        <string>Tab 1</string>
+        <string>Element Groups</string>
        </attribute>
       </widget>
-      <widget class="QWidget" name="tab_6">
+      <widget class="QWidget" name="tab_2">
        <attribute name="title">
-        <string>Tab 2</string>
+        <string>Material FOS</string>
        </attribute>
       </widget>
-      <widget class="QWidget" name="tab_7">
+      <widget class="QWidget" name="tab_3">
        <attribute name="title">
         <string>Page</string>
        </attribute>
       </widget>
-      <widget class="QWidget" name="tab_8">
+      <widget class="QWidget" name="tab_4">
        <attribute name="title">
         <string>Page</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout"/>
       </widget>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout" stretch="0,0,0">
+      <property name="spacing">
+       <number>2</number>
+      </property>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetMinimumSize</enum>
+      </property>
+      <property name="bottomMargin">
+       <number>20</number>
+      </property>
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>PushButton</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QProgressBar" name="progressBar">
+        <property name="value">
+         <number>24</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLineEdit" name="lineEdit_4"/>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="layoutDirection">
+       <enum>Qt::LeftToRight</enum>
+      </property>
+      <property name="text">
+       <string>Developed by </string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+      </property>
      </widget>
     </item>
    </layout>
@@ -254,7 +390,7 @@ QTabBar::tab:left:only-one, QTabBar::tab:right:only-one {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>797</width>
+     <width>826</width>
      <height>21</height>
     </rect>
    </property>
@@ -263,6 +399,7 @@ QTabBar::tab:left:only-one, QTabBar::tab:right:only-one {
      <string>File</string>
     </property>
     <addaction name="actionnew"/>
+    <addaction name="actionexit"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -270,6 +407,11 @@ QTabBar::tab:left:only-one, QTabBar::tab:right:only-one {
   <action name="actionnew">
    <property name="text">
     <string>new</string>
+   </property>
+  </action>
+  <action name="actionexit">
+   <property name="text">
+    <string>exit</string>
    </property>
   </action>
  </widget>
