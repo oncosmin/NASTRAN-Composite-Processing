@@ -353,16 +353,18 @@ def create_table_vm(index):
 
 
 def formula_vmMOS_shell(s1m,s2m,s12m,s1t,s2t,s12t,fos,s_allow):
-    return s_allow/sqrt(abs((fos*s1m+1.1*s1t)**2-(fos*s1m+1.1*s1t)*(fos*s2m+1.1*s2t)+(fos*s2m+1.1*s2t)**2+\
-                            3*(fos*s12m+1.1*s12t)**2.))-1
+    fos_t=1.1
+    return s_allow/sqrt(abs((fos*s1m+fos_t*s1t)**2-(fos*s1m+fos_t*s1t)*(fos*s2m+fos_t*s2t)+(fos*s2m+fos_t*s2t)**2+\
+                            3*(fos*s12m+fos_t*s12t)**2.))-1
 
 def formula_vmMOS_solid(s1m,s2m,s3m,s12m,s23m,s31m,s1t,s2t,s3t,s12t,s23t,s31t,fos,s_allow):
-    return s_allow/sqrt(0.5*((fos*(s1m-s2m)+s1t-s2t)**2+\
-                             (fos*(s2m-s3m)+s2t-s3t)**2+\
-                             (fos*(s3m-s1m)+s3t-s1t)**2+\
-                             6*((fos*s12m+s12t)**2+\
-                                (fos*s12m+s12t)**2+\
-                                (fos*s12m+s12t)**2)))-1
+    fos_t=1.1
+    return s_allow/sqrt(0.5*((fos*(s1m-s2m)+fos_t*(s1t-s2t))**2+\
+                             (fos*(s2m-s3m)+fos_t*(s2t-s3t))**2+\
+                             (fos*(s3m-s1m)+fos_t*(s3t-s1t))**2+\
+                             6*((fos*s12m+fos_t*s12t)**2+\
+                                (fos*s12m+fos_t*s12t)**2+\
+                                (fos*s12m+fos_t*s12t)**2)))-1
 
 def create_mos_vm(group_name,index,endCase):   
     c.execute('CREATE TABLE IF NOT EXISTS ElmVM_MOS (eid INTEGER, sig1m REAL, sig2m REAL, sig3m REAL,\
