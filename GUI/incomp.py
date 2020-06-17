@@ -418,16 +418,19 @@ class Ui_MainWindow(object):
     def browseBDF(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select BDF file", "", "BDF Files (*.bdf)")
         if fileName:
+            self.browse_view_bdf.clear()
             self.browse_view_bdf.append(fileName)
 
     def browseF06(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select F06 file", "", "F06 Files (*.f06)")
         if fileName:
+            self.browse_view_bdf.clear()
             self.browse_view_f06.append(fileName)
 
     def browsePCH(self):
         fileName, _ = QtWidgets.QFileDialog.getOpenFileName(None, "Select PCH file", "", "PCH Files (*.pch)")
         if fileName:
+            self.browse_view_bdf.clear()
             self.browse_view_pch.append(fileName)
 
     def retranslateUi(self, MainWindow):
