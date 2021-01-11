@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>826</width>
-    <height>651</height>
+    <width>952</width>
+    <height>682</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -390,7 +390,7 @@ QTabBar::tab:left:only-one, QTabBar::tab:right:only-one {
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>826</width>
+     <width>952</width>
      <height>21</height>
     </rect>
    </property>
