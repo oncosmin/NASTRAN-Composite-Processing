@@ -4,6 +4,9 @@ Strength Ratio and Element Ply Stress data extractor and processor for NASTRAN F
 This is a script tool that was developed to postprocess results obtained 
 from NASTRAN calculation for composite elements. When doing structural analysis with composite materiales, PCOMP card in NASTRAN, it is possible to specify an output for Ply Strength Ratio (with PARAM SRCOMPS YES) and individual ply stress on each element according to the material orientation (PARAM NOCOMPS 1). The output file .f06 must contain Strength Ratio and Ply Element Stresses for this tool to work. 
 
+Run SR-Extract.py or SR-Extract-V213.exe
+
+__Work IN Progress__
 
 
 
